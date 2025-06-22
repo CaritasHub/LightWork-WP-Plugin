@@ -164,3 +164,14 @@ Per qualsiasi domanda o problema, apri un **issue** su GitHub o contatta il supp
 
 Questa prima release include una funzionalità di base per la creazione di Custom Post Types tramite una pagina di amministrazione. Dopo l'attivazione, nel menu di WordPress comparirà "LightWork" da cui sarà possibile definire un nuovo CPT specificando slug e label. Il plugin registra automaticamente il CPT e crea un campo ACF denominato "subtitle". Inoltre espone una rotta REST `lightwork/v1/<slug>/` per recuperare gli elementi del tipo creato. È presente un esempio di template nella cartella `templates/` che può essere copiato e adattato nel tema attivo.
 
+
+## Workflow di release
+
+Il repository include un workflow GitHub Actions che crea automaticamente un file `.zip` del plugin e pubblica una release quando viene creato un tag con prefisso `v`.
+
+Per rilasciare una nuova versione:
+
+1. Aggiorna il numero di versione nel file `lightwork-wp-plugin.php`.
+2. Crea un nuovo tag `vX.Y.Z` e spingilo su GitHub.
+
+Il workflow genererà il pacchetto `lightwork-wp-plugin.zip` e lo allegherà alla release corrispondente.
