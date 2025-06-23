@@ -2,7 +2,7 @@
 /**
  * Plugin Name: LightWork WP Plugin
  * Description: Gestione dei Custom Post Types integrata con ACF e REST API.
- * Version: 0.1.1
+ * Version: 0.2.0
  * Author: LightWork
  * License: GPLv2 or later
  */
@@ -39,9 +39,12 @@ class LightWork_WP_Plugin {
      * @param array $args Arguments for register_post_type.
      */
     private function register_cpt( array $args ) {
-        $slug   = isset( $args['slug'] ) ? sanitize_key( $args['slug'] ) : '';
-        $single = isset( $args['single'] ) ? sanitize_text_field( $args['single'] ) : '';
-        $plural = isset( $args['plural'] ) ? sanitize_text_field( $args['plural'] ) : '';
+        $slug        = isset( $args['slug'] ) ? sanitize_key( $args['slug'] ) : '';
+        $single      = isset( $args['single'] ) ? sanitize_text_field( $args['single'] ) : '';
+        $plural      = isset( $args['plural'] ) ? sanitize_text_field( $args['plural'] ) : '';
+        $public      = isset( $args['public'] ) ? (bool) $args['public'] : true;
+        $has_archive = isset( $args['has_archive'] ) ? (bool) $args['has_archive'] : true;
+        $supports    = isset( $args['supports'] ) && is_array( $args['supports'] ) ? array_map( 'sanitize_key', $args['supports'] ) : [ 'title', 'editor', 'thumbnail' ];
 
         if ( empty( $slug ) || empty( $single ) || empty( $plural ) ) {
             return;
@@ -60,12 +63,12 @@ class LightWork_WP_Plugin {
         ];
 
         $args = [
-            'labels'             => $labels,
-            'public'             => true,
-            'show_in_rest'       => true,
-            'has_archive'        => true,
-            'rewrite'            => [ 'slug' => $slug ],
-            'supports'           => [ 'title', 'editor', 'thumbnail' ],
+            'labels'       => $labels,
+            'public'       => $public,
+            'show_in_rest' => true,
+            'has_archive'  => $has_archive,
+            'rewrite'      => [ 'slug' => $slug ],
+            'supports'     => $supports,
         ];
 
         register_post_type( $slug, $args );
@@ -121,66 +124,197 @@ class LightWork_WP_Plugin {
     }
 
     /**
-     * Render plugin admin page with simple form to create CPTs.
+     * Render plugin admin page with CPT list and management form.
      */
     public function render_admin_page() {
         if ( ! current_user_can( 'manage_options' ) ) {
             return;
         }
 
-        if ( isset( $_POST['lw_create_cpt'] ) && check_admin_referer( 'lw_create_cpt_nonce' ) ) {
-            $this->handle_form_submission();
+        $action = isset( $_GET['action'] ) ? sanitize_key( $_GET['action'] ) : '';
+        $slug   = isset( $_GET['slug'] ) ? sanitize_key( $_GET['slug'] ) : '';
+
+        if ( 'delete' === $action && $slug && check_admin_referer( 'lw_delete_cpt_' . $slug ) ) {
+            $this->delete_cpt( $slug );
+            $action = '';
         }
 
-        ?>
-        <div class="wrap">
-            <h1><?php esc_html_e( 'LightWork - Create Custom Post Type', 'lightwork-wp-plugin' ); ?></h1>
-            <form method="post">
-                <?php wp_nonce_field( 'lw_create_cpt_nonce' ); ?>
-                <table class="form-table" role="presentation">
-                    <tr>
-                        <th scope="row"><label for="lw-slug"><?php esc_html_e( 'Slug', 'lightwork-wp-plugin' ); ?></label></th>
-                        <td><input name="lw-slug" id="lw-slug" type="text" class="regular-text" required></td>
-                    </tr>
-                    <tr>
-                        <th scope="row"><label for="lw-single"><?php esc_html_e( 'Singular Label', 'lightwork-wp-plugin' ); ?></label></th>
-                        <td><input name="lw-single" id="lw-single" type="text" class="regular-text" required></td>
-                    </tr>
-                    <tr>
-                        <th scope="row"><label for="lw-plural"><?php esc_html_e( 'Plural Label', 'lightwork-wp-plugin' ); ?></label></th>
-                        <td><input name="lw-plural" id="lw-plural" type="text" class="regular-text" required></td>
-                    </tr>
-                </table>
-                <?php submit_button( __( 'Create CPT', 'lightwork-wp-plugin' ), 'primary', 'lw_create_cpt' ); ?>
-            </form>
-        </div>
-        <?php
+        if ( isset( $_POST['lw_save_cpt'] ) && check_admin_referer( 'lw_save_cpt_nonce' ) ) {
+            $old = isset( $_POST['lw-old-slug'] ) ? sanitize_key( $_POST['lw-old-slug'] ) : null;
+            $this->handle_form_submission( $old );
+            $action = '';
+        }
+
+        echo '<div class="wrap">';
+        echo '<h1>' . esc_html__( 'LightWork - Manage Custom Post Types', 'lightwork-wp-plugin' ) . '</h1>';
+        settings_errors( 'lightwork' );
+
+        if ( 'new' === $action ) {
+            $this->render_cpt_form();
+        } elseif ( 'edit' === $action && $slug ) {
+            $cpts = get_option( self::OPTION_CPTS, [] );
+            foreach ( $cpts as $cpt ) {
+                if ( $cpt['slug'] === $slug ) {
+                    $this->render_cpt_form( $cpt, true );
+                    break;
+                }
+            }
+        } else {
+            echo '<a href="' . esc_url( admin_url( 'admin.php?page=lightwork-wp-plugin&action=new' ) ) . '" class="page-title-action">' . esc_html__( 'Add New CPT', 'lightwork-wp-plugin' ) . '</a>';
+            $this->render_cpt_list();
+        }
+
+        echo '</div>';
     }
 
     /**
-     * Handle CPT creation form submission.
+     * Output list of registered CPTs.
      */
-    private function handle_form_submission() {
-        $slug   = isset( $_POST['lw-slug'] ) ? sanitize_key( $_POST['lw-slug'] ) : '';
-        $single = isset( $_POST['lw-single'] ) ? sanitize_text_field( $_POST['lw-single'] ) : '';
-        $plural = isset( $_POST['lw-plural'] ) ? sanitize_text_field( $_POST['lw-plural'] ) : '';
+    private function render_cpt_list() {
+        $cpts = get_option( self::OPTION_CPTS, [] );
+        if ( empty( $cpts ) ) {
+            echo '<p>' . esc_html__( 'No Custom Post Types found.', 'lightwork-wp-plugin' ) . '</p>';
+            return;
+        }
+
+        echo '<table class="widefat fixed striped">';
+        echo '<thead><tr><th>' . esc_html__( 'Slug', 'lightwork-wp-plugin' ) . '</th><th>' . esc_html__( 'Singular', 'lightwork-wp-plugin' ) . '</th><th>' . esc_html__( 'Plural', 'lightwork-wp-plugin' ) . '</th><th>' . esc_html__( 'Actions', 'lightwork-wp-plugin' ) . '</th></tr></thead>';
+        echo '<tbody>';
+        foreach ( $cpts as $cpt ) {
+            $edit   = admin_url( 'admin.php?page=lightwork-wp-plugin&action=edit&slug=' . $cpt['slug'] );
+            $delete = wp_nonce_url( admin_url( 'admin.php?page=lightwork-wp-plugin&action=delete&slug=' . $cpt['slug'] ), 'lw_delete_cpt_' . $cpt['slug'] );
+            echo '<tr>';
+            echo '<td>' . esc_html( $cpt['slug'] ) . '</td>';
+            echo '<td>' . esc_html( $cpt['single'] ) . '</td>';
+            echo '<td>' . esc_html( $cpt['plural'] ) . '</td>';
+            echo '<td><a href="' . esc_url( $edit ) . '">' . esc_html__( 'Edit', 'lightwork-wp-plugin' ) . '</a> | <a href="' . esc_url( $delete ) . '" onclick="return confirm(\'' . esc_js( __( 'Are you sure?', 'lightwork-wp-plugin' ) ) . '\');">' . esc_html__( 'Delete', 'lightwork-wp-plugin' ) . '</a></td>';
+            echo '</tr>';
+        }
+        echo '</tbody></table>';
+    }
+
+    /**
+     * Render CPT creation/edit form.
+     *
+     * @param array $cpt    Existing CPT args when editing.
+     * @param bool  $editing Whether we are editing an existing CPT.
+     */
+    private function render_cpt_form( array $cpt = [], $editing = false ) {
+        $slug        = $cpt['slug'] ?? '';
+        $single      = $cpt['single'] ?? '';
+        $plural      = $cpt['plural'] ?? '';
+        $public      = isset( $cpt['public'] ) ? (bool) $cpt['public'] : true;
+        $archive     = isset( $cpt['has_archive'] ) ? (bool) $cpt['has_archive'] : true;
+        $supports    = isset( $cpt['supports'] ) && is_array( $cpt['supports'] ) ? $cpt['supports'] : [ 'title', 'editor', 'thumbnail' ];
+        $available   = [ 'title', 'editor', 'thumbnail', 'excerpt', 'custom-fields' ];
+
+        echo '<h2>' . ( $editing ? esc_html__( 'Edit Custom Post Type', 'lightwork-wp-plugin' ) : esc_html__( 'Add Custom Post Type', 'lightwork-wp-plugin' ) ) . '</h2>';
+        echo '<form method="post">';
+        wp_nonce_field( 'lw_save_cpt_nonce' );
+        echo '<table class="form-table" role="presentation">';
+        echo '<tr><th scope="row"><label for="lw-slug">' . esc_html__( 'Slug', 'lightwork-wp-plugin' ) . '</label></th><td><input name="lw-slug" id="lw-slug" type="text" class="regular-text" value="' . esc_attr( $slug ) . '" required></td></tr>';
+        echo '<tr><th scope="row"><label for="lw-single">' . esc_html__( 'Singular Label', 'lightwork-wp-plugin' ) . '</label></th><td><input name="lw-single" id="lw-single" type="text" class="regular-text" value="' . esc_attr( $single ) . '" required></td></tr>';
+        echo '<tr><th scope="row"><label for="lw-plural">' . esc_html__( 'Plural Label', 'lightwork-wp-plugin' ) . '</label></th><td><input name="lw-plural" id="lw-plural" type="text" class="regular-text" value="' . esc_attr( $plural ) . '" required></td></tr>';
+        echo '<tr><th scope="row">' . esc_html__( 'Supports', 'lightwork-wp-plugin' ) . '</th><td>';
+        foreach ( $available as $feature ) {
+            echo '<label><input type="checkbox" name="lw-supports[]" value="' . esc_attr( $feature ) . '"' . checked( in_array( $feature, $supports, true ), true, false ) . '/> ' . esc_html( $feature ) . '</label><br />';
+        }
+        echo '</td></tr>';
+        echo '<tr><th scope="row">' . esc_html__( 'Public', 'lightwork-wp-plugin' ) . '</th><td><input type="checkbox" name="lw-public" value="1"' . checked( $public, true, false ) . ' /></td></tr>';
+        echo '<tr><th scope="row">' . esc_html__( 'Has Archive', 'lightwork-wp-plugin' ) . '</th><td><input type="checkbox" name="lw-archive" value="1"' . checked( $archive, true, false ) . ' /></td></tr>';
+        echo '</table>';
+        if ( $editing ) {
+            echo '<input type="hidden" name="lw-old-slug" value="' . esc_attr( $slug ) . '" />';
+        }
+        submit_button( $editing ? __( 'Save Changes', 'lightwork-wp-plugin' ) : __( 'Create CPT', 'lightwork-wp-plugin' ), 'primary', 'lw_save_cpt' );
+        echo '</form>';
+    }
+
+    /**
+     * Handle CPT creation or update form submission.
+     *
+     * @param string|null $old_slug Slug of CPT being edited.
+     */
+    private function handle_form_submission( $old_slug = null ) {
+        $slug     = isset( $_POST['lw-slug'] ) ? sanitize_key( $_POST['lw-slug'] ) : '';
+        $single   = isset( $_POST['lw-single'] ) ? sanitize_text_field( $_POST['lw-single'] ) : '';
+        $plural   = isset( $_POST['lw-plural'] ) ? sanitize_text_field( $_POST['lw-plural'] ) : '';
+        $public   = isset( $_POST['lw-public'] );
+        $archive  = isset( $_POST['lw-archive'] );
+        $supports = isset( $_POST['lw-supports'] ) ? array_map( 'sanitize_key', (array) $_POST['lw-supports'] ) : [];
 
         if ( empty( $slug ) || empty( $single ) || empty( $plural ) ) {
             add_settings_error( 'lightwork', 'invalid', __( 'All fields are required.', 'lightwork-wp-plugin' ) );
             return;
         }
 
-        $cpts   = get_option( self::OPTION_CPTS, [] );
-        $cpts[] = [
-            'slug'   => $slug,
-            'single' => $single,
-            'plural' => $plural,
-        ];
+        $cpts = get_option( self::OPTION_CPTS, [] );
+
+        if ( $old_slug ) {
+            foreach ( $cpts as &$cpt ) {
+                if ( $cpt['slug'] === $old_slug ) {
+                    $cpt = [
+                        'slug'        => $slug,
+                        'single'      => $single,
+                        'plural'      => $plural,
+                        'public'      => $public,
+                        'has_archive' => $archive,
+                        'supports'    => $supports,
+                    ];
+                    if ( $old_slug !== $slug ) {
+                        global $wpdb;
+                        $wpdb->update( $wpdb->posts, [ 'post_type' => $slug ], [ 'post_type' => $old_slug ] );
+                    }
+                    break;
+                }
+            }
+            unset( $cpt );
+            $message = __( 'Custom Post Type updated.', 'lightwork-wp-plugin' );
+        } else {
+            $cpts[] = [
+                'slug'        => $slug,
+                'single'      => $single,
+                'plural'      => $plural,
+                'public'      => $public,
+                'has_archive' => $archive,
+                'supports'    => $supports,
+            ];
+            $message = __( 'Custom Post Type created.', 'lightwork-wp-plugin' );
+        }
 
         update_option( self::OPTION_CPTS, $cpts );
-        $this->register_cpt( [ 'slug' => $slug, 'single' => $single, 'plural' => $plural ] );
+        $this->register_cpt( [
+            'slug'        => $slug,
+            'single'      => $single,
+            'plural'      => $plural,
+            'public'      => $public,
+            'has_archive' => $archive,
+            'supports'    => $supports,
+        ] );
 
-        add_settings_error( 'lightwork', 'success', __( 'Custom Post Type created.', 'lightwork-wp-plugin' ), 'updated' );
+        add_settings_error( 'lightwork', 'success', $message, 'updated' );
+    }
+
+    /**
+     * Delete a CPT and unregister it if possible.
+     *
+     * @param string $slug CPT slug to delete.
+     */
+    private function delete_cpt( $slug ) {
+        $cpts = get_option( self::OPTION_CPTS, [] );
+        foreach ( $cpts as $i => $cpt ) {
+            if ( $cpt['slug'] === $slug ) {
+                unset( $cpts[ $i ] );
+                break;
+            }
+        }
+        update_option( self::OPTION_CPTS, array_values( $cpts ) );
+
+        if ( function_exists( 'unregister_post_type' ) ) {
+            unregister_post_type( $slug );
+        }
+
+        add_settings_error( 'lightwork', 'deleted', __( 'Custom Post Type deleted.', 'lightwork-wp-plugin' ), 'updated' );
     }
 
     /**
