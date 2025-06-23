@@ -3,7 +3,7 @@
  * Plugin Name: LightWork WP Plugin
  * Description: Gestione dei Custom Post Types integrata con ACF e REST API.
 
- * Version: 0.3.1
+ * Version: 0.3.2
  * Author: LightWork
  * License: GPLv2 or later
  */
@@ -12,12 +12,19 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit; // Exit if accessed directly.
 }
 
+require_once plugin_dir_path( __FILE__ ) . 'includes/class-template-editor.php';
+
 class LightWork_WP_Plugin {
 
     const OPTION_CPTS = 'lightwork_cpts';
     const CRON_HOOK   = 'lightwork_batch_update';
 
+    /** @var LightWork_Template_Editor */
+    private $template_editor;
+
+
     public function __construct() {
+        $this->template_editor = new LightWork_Template_Editor();
         add_action( 'init', [ $this, 'register_saved_cpts' ] );
         add_action( 'admin_menu', [ $this, 'register_admin_menu' ] );
         add_action( 'rest_api_init', [ $this, 'register_rest_routes' ] );
@@ -47,10 +54,11 @@ class LightWork_WP_Plugin {
         $has_archive = isset( $args['has_archive'] ) ? (bool) $args['has_archive'] : true;
         $supports    = isset( $args['supports'] ) && is_array( $args['supports'] ) ? array_map( 'sanitize_key', $args['supports'] ) : [ 'title', 'editor', 'thumbnail' ];
 
-        $fields       = isset( $args['acf_fields'] ) && is_array( $args['acf_fields'] ) ? $args['acf_fields'] : [];
-        $menu_icon    = isset( $args['menu_icon'] ) ? sanitize_text_field( $args['menu_icon'] ) : '';
-        $rewrite_slug = isset( $args['rewrite_slug'] ) ? sanitize_title_with_dashes( $args['rewrite_slug'] ) : $slug;
-        $hierarchical = isset( $args['hierarchical'] ) ? (bool) $args['hierarchical'] : false;
+        $fields         = isset( $args['acf_fields'] ) && is_array( $args['acf_fields'] ) ? $args['acf_fields'] : [];
+        $menu_icon      = isset( $args['menu_icon'] ) ? sanitize_text_field( $args['menu_icon'] ) : '';
+        $rewrite_slug   = isset( $args['rewrite_slug'] ) ? sanitize_title_with_dashes( $args['rewrite_slug'] ) : $slug;
+        $hierarchical   = isset( $args['hierarchical'] ) ? (bool) $args['hierarchical'] : false;
+        $template_page  = isset( $args['template_page'] ) ? absint( $args['template_page'] ) : 0;
 
 
         if ( empty( $slug ) || empty( $single ) || empty( $plural ) ) {
@@ -110,6 +118,8 @@ class LightWork_WP_Plugin {
         }
 
         $acf_fields = [];
+        $use_template  = isset( $_POST['lw-use-template'] );
+        $template_page = isset( $_POST['lw-template-page'] ) ? absint( $_POST['lw-template-page'] ) : 0;
         foreach ( $fields as $field ) {
             $name  = sanitize_key( $field['name'] ?? '' );
             $label = sanitize_text_field( $field['label'] ?? '' );
@@ -240,6 +250,8 @@ class LightWork_WP_Plugin {
             [ $this, 'render_admin_page' ],
             'dashicons-admin-generic'
         );
+
+        $this->template_editor->register_page();
     }
 
     /**
@@ -304,11 +316,16 @@ class LightWork_WP_Plugin {
         foreach ( $cpts as $cpt ) {
             $edit   = admin_url( 'admin.php?page=lightwork-wp-plugin&action=edit&slug=' . $cpt['slug'] );
             $delete = wp_nonce_url( admin_url( 'admin.php?page=lightwork-wp-plugin&action=delete&slug=' . $cpt['slug'] ), 'lw_delete_cpt_' . $cpt['slug'] );
+            $template = '';
+            if ( ! empty( $cpt['template_page'] ) ) {
+                $tlink = admin_url( 'admin.php?page=lightwork-template-editor&slug=' . $cpt['slug'] );
+                $template = ' | <a href="' . esc_url( $tlink ) . '">' . esc_html__( 'Template', 'lightwork-wp-plugin' ) . '</a>';
+            }
             echo '<tr>';
             echo '<td>' . esc_html( $cpt['slug'] ) . '</td>';
             echo '<td>' . esc_html( $cpt['single'] ) . '</td>';
             echo '<td>' . esc_html( $cpt['plural'] ) . '</td>';
-            echo '<td><a href="' . esc_url( $edit ) . '">' . esc_html__( 'Edit', 'lightwork-wp-plugin' ) . '</a> | <a href="' . esc_url( $delete ) . '" onclick="return confirm(\'' . esc_js( __( 'Are you sure?', 'lightwork-wp-plugin' ) ) . '\');">' . esc_html__( 'Delete', 'lightwork-wp-plugin' ) . '</a></td>';
+            echo '<td><a href="' . esc_url( $edit ) . '">' . esc_html__( 'Edit', 'lightwork-wp-plugin' ) . '</a> | <a href="' . esc_url( $delete ) . '" onclick="return confirm(\'' . esc_js( __( 'Are you sure?', 'lightwork-wp-plugin' ) ) . '\');">' . esc_html__( 'Delete', 'lightwork-wp-plugin' ) . '</a>' . $template . '</td>';
             echo '</tr>';
         }
         echo '</tbody></table>';
@@ -333,6 +350,7 @@ class LightWork_WP_Plugin {
         $menu_icon     = $cpt['menu_icon'] ?? '';
         $rewrite_slug  = $cpt['rewrite_slug'] ?? $slug;
         $hierarchical  = isset( $cpt['hierarchical'] ) ? (bool) $cpt['hierarchical'] : false;
+        $template_page = isset( $cpt['template_page'] ) ? absint( $cpt['template_page'] ) : 0;
         $available     = [ 'title', 'editor', 'thumbnail', 'excerpt', 'custom-fields' ];
 
 
@@ -383,6 +401,19 @@ class LightWork_WP_Plugin {
         echo '<p><button type="button" class="button" id="lw-add-field">' . esc_html__( 'Add Field', 'lightwork-wp-plugin' ) . '</button></p>';
         echo '</td></tr>';
 
+        $use_template_checked = $template_page ? 'checked' : '';
+        echo '<tr><th scope="row">' . esc_html__( 'Associate Template', 'lightwork-wp-plugin' ) . '</th><td><label><input type="checkbox" id="lw-use-template" name="lw-use-template" value="1" ' . $use_template_checked . ' /> ' . esc_html__( 'Link a template page', 'lightwork-wp-plugin' ) . '</label></td></tr>';
+        echo '<tr id="lw-template-row"><th scope="row">' . esc_html__( 'Template Page', 'lightwork-wp-plugin' ) . '</th><td>';
+        echo '<select name="lw-template-page" id="lw-template-page">';
+        echo '<option value="">' . esc_html__( 'Create New...', 'lightwork-wp-plugin' ) . '</option>';
+        $pages = get_pages();
+        foreach ( $pages as $page ) {
+            echo '<option value="' . esc_attr( $page->ID ) . '"' . selected( $template_page, $page->ID, false ) . '>' . esc_html( $page->post_title ) . '</option>';
+        }
+        echo '</select>';
+        echo '<p class="description">' . esc_html__( 'Choose existing page or select "Create New..." to generate one.', 'lightwork-wp-plugin' ) . '</p>';
+        echo '</td></tr>';
+
         echo '<tr><th scope="row">' . esc_html__( 'Public', 'lightwork-wp-plugin' ) . '</th><td><input type="checkbox" name="lw-public" value="1"' . checked( $public, true, false ) . ' />';
         echo '<p class="description">' . esc_html__( 'Visibility of the CPT on the frontend.', 'lightwork-wp-plugin' ) . '</p></td></tr>';
         echo '<tr><th scope="row">' . esc_html__( 'Has Archive', 'lightwork-wp-plugin' ) . '</th><td><input type="checkbox" name="lw-archive" value="1"' . checked( $archive, true, false ) . ' />';
@@ -423,11 +454,25 @@ class LightWork_WP_Plugin {
             }
             $('#lw-enable-acf').on('change', toggle_acf);
             toggle_acf();
+
+            function toggle_template(){
+                if($('#lw-use-template').is(':checked')){
+                    $('#lw-template-row').show();
+                }else{
+                    $('#lw-template-row').hide();
+                }
+            }
+            $('#lw-use-template').on('change', toggle_template);
+            toggle_template();
         });
         </script>
         <?php
 
     }
+
+    /**
+     * Render the template editor for a CPT.
+     */
 
     /**
      * Handle CPT creation or update form submission.
@@ -464,6 +509,14 @@ class LightWork_WP_Plugin {
             }
         }
 
+        if ( $use_template && ! $template_page ) {
+            $template_page = wp_insert_post( [
+                'post_title'  => $single . ' Template',
+                'post_status' => 'draft',
+                'post_type'   => 'page',
+            ] );
+        }
+
 
         if ( empty( $slug ) || empty( $single ) || empty( $plural ) ) {
             add_settings_error( 'lightwork', 'invalid', __( 'All fields are required.', 'lightwork-wp-plugin' ) );
@@ -487,6 +540,7 @@ class LightWork_WP_Plugin {
                         'menu_icon'    => $menu_icon,
                         'rewrite_slug' => $rewrite_slug,
                         'hierarchical' => $hierarchical,
+                        'template_page' => $use_template ? $template_page : 0,
 
                     ];
                     if ( $old_slug !== $slug ) {
@@ -511,6 +565,7 @@ class LightWork_WP_Plugin {
                 'menu_icon'    => $menu_icon,
                 'rewrite_slug' => $rewrite_slug,
                 'hierarchical' => $hierarchical,
+                'template_page' => $use_template ? $template_page : 0,
 
             ];
             $message = __( 'Custom Post Type created.', 'lightwork-wp-plugin' );
@@ -529,9 +584,14 @@ class LightWork_WP_Plugin {
             'menu_icon'   => $menu_icon,
             'rewrite_slug'=> $rewrite_slug,
             'hierarchical'=> $hierarchical,
+            'template_page' => $use_template ? $template_page : 0,
         ] );
 
         add_settings_error( 'lightwork', 'success', $message, 'updated' );
+        if ( $use_template ) {
+            $link = admin_url( 'admin.php?page=lightwork-template-editor&slug=' . $slug );
+            add_settings_error( 'lightwork', 'template', sprintf( __( 'Configure the template <a href="%s">here</a>.', 'lightwork-wp-plugin' ), esc_url( $link ) ), 'updated' );
+        }
     }
 
     /**
