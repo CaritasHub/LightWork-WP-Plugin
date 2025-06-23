@@ -3,7 +3,7 @@
  * Plugin Name: LightWork WP Plugin
  * Description: Gestione dei Custom Post Types integrata con ACF e REST API.
 
- * Version: 0.3.1
+ * Version: 0.3.2
  * Author: LightWork
  * License: GPLv2 or later
  */
@@ -12,18 +12,18 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit; // Exit if accessed directly.
 }
 
+require_once plugin_dir_path( __FILE__ ) . 'includes/class-template-editor.php';
+
 class LightWork_WP_Plugin {
 
     const OPTION_CPTS = 'lightwork_cpts';
     const CRON_HOOK   = 'lightwork_batch_update';
 
-    /**
-     * Option prefix for template field mapping.
-     * Each CPT will store mappings in option "lw_template_map_{slug}".
-     */
-    const TEMPLATE_MAP_PREFIX = 'lw_template_map_';
+    /** @var LightWork_Template_Editor */
+    private $template_editor;
 
     public function __construct() {
+        $this->template_editor = new LightWork_Template_Editor();
         add_action( 'init', [ $this, 'register_saved_cpts' ] );
         add_action( 'admin_menu', [ $this, 'register_admin_menu' ] );
         add_action( 'rest_api_init', [ $this, 'register_rest_routes' ] );
@@ -250,14 +250,8 @@ class LightWork_WP_Plugin {
             'dashicons-admin-generic'
         );
 
-        add_submenu_page(
-            null,
-            'Template Editor',
-            'Template Editor',
-            'manage_options',
-            'lightwork-template-editor',
-            [ $this, 'render_template_editor' ]
-        );
+        $this->template_editor->register_page();
+
     }
 
     /**
@@ -479,104 +473,8 @@ class LightWork_WP_Plugin {
     /**
      * Render the template editor for a CPT.
      */
-    public function render_template_editor() {
-        if ( ! current_user_can( 'manage_options' ) ) {
-            return;
-        }
 
-        wp_enqueue_script( 'jquery-ui-draggable' );
-        wp_enqueue_script( 'jquery-ui-droppable' );
 
-        $slug = isset( $_GET['slug'] ) ? sanitize_key( $_GET['slug'] ) : '';
-        $cpts = get_option( self::OPTION_CPTS, [] );
-        $cpt  = null;
-        foreach ( $cpts as $item ) {
-            if ( $item['slug'] === $slug ) {
-                $cpt = $item;
-                break;
-            }
-        }
-        if ( ! $cpt || empty( $cpt['template_page'] ) ) {
-            echo '<div class="wrap"><h1>' . esc_html__( 'No template configured.', 'lightwork-wp-plugin' ) . '</h1></div>';
-            return;
-        }
-
-        $page_id   = $cpt['template_page'];
-        $acf_fields = $cpt['acf_fields'] ?? [];
-        $option     = self::TEMPLATE_MAP_PREFIX . $slug;
-        $mapping    = get_option( $option, [] );
-
-        if ( isset( $_POST['lw-save-template'] ) && check_admin_referer( 'lw_save_template_' . $slug ) ) {
-            $mapping = [];
-            foreach ( (array) ( $_POST['lw-mapping'] ?? [] ) as $key => $sel ) {
-                $mapping[ sanitize_key( $key ) ] = sanitize_text_field( $sel );
-            }
-            $missing = [];
-            foreach ( $acf_fields as $field ) {
-                if ( empty( $mapping[ $field['name'] ] ) ) {
-                    $missing[] = $field['name'];
-                }
-            }
-            if ( $missing ) {
-                add_settings_error( 'lightwork', 'missing', __( 'Map all fields before saving.', 'lightwork-wp-plugin' ) );
-            } else {
-                update_option( $option, $mapping );
-                add_settings_error( 'lightwork', 'saved', __( 'Template saved.', 'lightwork-wp-plugin' ), 'updated' );
-            }
-        }
-
-        echo '<div class="wrap">';
-        echo '<h1>' . esc_html__( 'Template Editor', 'lightwork-wp-plugin' ) . '</h1>';
-        settings_errors( 'lightwork' );
-        echo '<div id="lw-template-editor" style="display:flex;gap:20px;">';
-        echo '<div id="lw-template-preview" style="flex:1;">';
-        echo '<iframe src="' . esc_url( get_permalink( $page_id ) ) . '" style="width:100%;height:500px;border:1px solid #ccc;"></iframe>';
-        echo '</div>';
-        echo '<div id="lw-template-fields" style="width:250px;">';
-        echo '<form method="post">';
-        wp_nonce_field( 'lw_save_template_' . $slug );
-        foreach ( $acf_fields as $field ) {
-            $name  = esc_attr( $field['name'] );
-            $label = esc_html( $field['label'] );
-            $sel   = esc_attr( $mapping[ $name ] ?? '' );
-            echo '<div class="lw-field" data-field="' . $name . '">' . $label . '<input type="hidden" name="lw-mapping[' . $name . ']" value="' . $sel . '" /></div>';
-        }
-        echo '<p><input type="submit" name="lw-save-template" class="button button-primary" value="' . esc_attr__( 'Save Template', 'lightwork-wp-plugin' ) . '" /></p>';
-        echo '</form></div></div></div>';
-        ?>
-        <style>
-        #lw-template-editor .lw-field{border:1px solid #ccc;padding:5px;margin-bottom:5px;cursor:move;background:#fff;}
-        #lw-template-preview .lw-highlight{outline:2px dashed red;}
-        </style>
-        <script>
-        jQuery(function($){
-            $('.lw-field').draggable({helper:'clone'});
-            $('#lw-template-preview iframe').on('load', function(){
-                var doc = this.contentWindow.document;
-                $(doc).find('*').each(function(){
-                    $(this).droppable({
-                        hoverClass:'lw-highlight',
-                        drop:function(e,ui){
-                            var selector = lwGetSelector(this);
-                            ui.draggable.find('input').val(selector);
-                        }
-                    });
-                });
-            });
-            function lwGetSelector(el){
-                var sel='';
-                while(el && el.nodeType===1 && !el.id){
-                    var idx=$(el).index();
-                    sel=el.tagName.toLowerCase()+(idx?':eq('+idx+')':'')+(sel?'>'+sel:'');
-                    el=el.parentElement;
-                }
-                if(el && el.id){ sel='#'+el.id+(sel?'>'+sel:''); }
-                return sel;
-            }
-        });
-        </script>
-        <?php
-    }
 
     /**
      * Handle CPT creation or update form submission.

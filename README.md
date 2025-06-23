@@ -27,6 +27,7 @@ Il plugin è progettato per essere facilmente configurabile tramite un **wizard 
 ### 3. Template dinamici per CTP
 - Ogni CTP può essere associato a un **template dinamico** che si popola automaticamente con i campi ACF.
 - I template possono essere facilmente personalizzati tramite il sistema di temi di WordPress, con la possibilità di aggiungere codice PHP per adattarli alle necessità specifiche.
+- Dalla versione 0.3.2 è disponibile un **Template Editor** drag & drop per mappare visivamente i campi ACF sugli elementi della pagina.
 
 ### 4. Rotte REST per il recupero dei dati
 - Fornisce **rotte REST** per accedere ai CTP tramite API, con parametri di filtraggio avanzato.
