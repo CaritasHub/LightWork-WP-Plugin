@@ -12,6 +12,8 @@ Il plugin è progettato per essere facilmente configurabile tramite un **wizard 
 
 ### 1. Creazione e gestione di CTP (Custom Post Types)
 - Crea facilmente nuovi **Custom Post Types (CTP)** tramite un'interfaccia semplice e chiara.
+- Pagina di amministrazione con elenco dei CTP creati e azioni di modifica o cancellazione.
+- Creazione guidata personalizzabile (supporti, visibilità, archivio) simile a CPT UI.
 - Gestione completa dei CTP con tutte le opzioni di configurazione, inclusa la visibilità e i permessi.
 - I CTP vengono visualizzati e gestiti nel backend di WordPress in modo intuitivo.
 
