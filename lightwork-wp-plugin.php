@@ -2,6 +2,7 @@
 /**
  * Plugin Name: LightWork WP Plugin
  * Description: Gestione dei Custom Post Types integrata con ACF e REST API.
+
  * Version: 0.3.0
  * Author: LightWork
  * License: GPLv2 or later
@@ -45,10 +46,12 @@ class LightWork_WP_Plugin {
         $public      = isset( $args['public'] ) ? (bool) $args['public'] : true;
         $has_archive = isset( $args['has_archive'] ) ? (bool) $args['has_archive'] : true;
         $supports    = isset( $args['supports'] ) && is_array( $args['supports'] ) ? array_map( 'sanitize_key', $args['supports'] ) : [ 'title', 'editor', 'thumbnail' ];
+
         $fields       = isset( $args['acf_fields'] ) && is_array( $args['acf_fields'] ) ? $args['acf_fields'] : [];
         $menu_icon    = isset( $args['menu_icon'] ) ? sanitize_text_field( $args['menu_icon'] ) : '';
         $rewrite_slug = isset( $args['rewrite_slug'] ) ? sanitize_title_with_dashes( $args['rewrite_slug'] ) : $slug;
         $hierarchical = isset( $args['hierarchical'] ) ? (bool) $args['hierarchical'] : false;
+
 
         if ( empty( $slug ) || empty( $single ) || empty( $plural ) ) {
             return;
@@ -71,6 +74,7 @@ class LightWork_WP_Plugin {
             'public'       => $public,
             'show_in_rest' => true,
             'has_archive'  => $has_archive,
+
             'rewrite'      => [ 'slug' => $rewrite_slug ],
             'supports'     => $supports,
             'hierarchical' => $hierarchical,
@@ -174,6 +178,7 @@ class LightWork_WP_Plugin {
             $old = isset( $_POST['lw-old-slug'] ) ? sanitize_key( $_POST['lw-old-slug'] ) : null;
             $this->handle_form_submission( $old );
             $action = '';
+
         }
 
         echo '<div class="wrap">';
@@ -208,6 +213,7 @@ class LightWork_WP_Plugin {
             return;
         }
 
+
         echo '<table class="widefat fixed striped">';
         echo '<thead><tr><th>' . esc_html__( 'Slug', 'lightwork-wp-plugin' ) . '</th><th>' . esc_html__( 'Singular', 'lightwork-wp-plugin' ) . '</th><th>' . esc_html__( 'Plural', 'lightwork-wp-plugin' ) . '</th><th>' . esc_html__( 'Actions', 'lightwork-wp-plugin' ) . '</th></tr></thead>';
         echo '<tbody>';
@@ -236,12 +242,14 @@ class LightWork_WP_Plugin {
         $plural      = $cpt['plural'] ?? '';
         $public      = isset( $cpt['public'] ) ? (bool) $cpt['public'] : true;
         $archive     = isset( $cpt['has_archive'] ) ? (bool) $cpt['has_archive'] : true;
+
         $supports      = isset( $cpt['supports'] ) && is_array( $cpt['supports'] ) ? $cpt['supports'] : [ 'title', 'editor', 'thumbnail' ];
         $acf_fields    = isset( $cpt['acf_fields'] ) && is_array( $cpt['acf_fields'] ) ? $cpt['acf_fields'] : [];
         $menu_icon     = $cpt['menu_icon'] ?? '';
         $rewrite_slug  = $cpt['rewrite_slug'] ?? $slug;
         $hierarchical  = isset( $cpt['hierarchical'] ) ? (bool) $cpt['hierarchical'] : false;
         $available     = [ 'title', 'editor', 'thumbnail', 'excerpt', 'custom-fields' ];
+
 
         echo '<h2>' . ( $editing ? esc_html__( 'Edit Custom Post Type', 'lightwork-wp-plugin' ) : esc_html__( 'Add Custom Post Type', 'lightwork-wp-plugin' ) ) . '</h2>';
         echo '<form method="post">';
@@ -250,14 +258,17 @@ class LightWork_WP_Plugin {
         echo '<tr><th scope="row"><label for="lw-slug">' . esc_html__( 'Slug', 'lightwork-wp-plugin' ) . '</label></th><td><input name="lw-slug" id="lw-slug" type="text" class="regular-text" value="' . esc_attr( $slug ) . '" required></td></tr>';
         echo '<tr><th scope="row"><label for="lw-single">' . esc_html__( 'Singular Label', 'lightwork-wp-plugin' ) . '</label></th><td><input name="lw-single" id="lw-single" type="text" class="regular-text" value="' . esc_attr( $single ) . '" required></td></tr>';
         echo '<tr><th scope="row"><label for="lw-plural">' . esc_html__( 'Plural Label', 'lightwork-wp-plugin' ) . '</label></th><td><input name="lw-plural" id="lw-plural" type="text" class="regular-text" value="' . esc_attr( $plural ) . '" required></td></tr>';
+
         echo '<tr><th scope="row"><label for="lw-menu-icon">' . esc_html__( 'Menu Icon', 'lightwork-wp-plugin' ) . '</label></th><td><input name="lw-menu-icon" id="lw-menu-icon" type="text" class="regular-text" value="' . esc_attr( $menu_icon ) . '" placeholder="dashicons-admin-post" ></td></tr>';
         echo '<tr><th scope="row"><label for="lw-rewrite-slug">' . esc_html__( 'Rewrite Slug', 'lightwork-wp-plugin' ) . '</label></th><td><input name="lw-rewrite-slug" id="lw-rewrite-slug" type="text" class="regular-text" value="' . esc_attr( $rewrite_slug ) . '"></td></tr>';
         echo '<tr><th scope="row">' . esc_html__( 'Hierarchical', 'lightwork-wp-plugin' ) . '</th><td><input type="checkbox" name="lw-hierarchical" value="1"' . checked( $hierarchical, true, false ) . ' /></td></tr>';
+
         echo '<tr><th scope="row">' . esc_html__( 'Supports', 'lightwork-wp-plugin' ) . '</th><td>';
         foreach ( $available as $feature ) {
             echo '<label><input type="checkbox" name="lw-supports[]" value="' . esc_attr( $feature ) . '"' . checked( in_array( $feature, $supports, true ), true, false ) . '/> ' . esc_html( $feature ) . '</label><br />';
         }
         echo '</td></tr>';
+
         echo '<tr><th scope="row">' . esc_html__( 'ACF Fields', 'lightwork-wp-plugin' ) . '</th><td>';
         echo '<table id="lw-acf-table" class="widefat"><tbody>';
         if ( ! empty( $acf_fields ) ) {
@@ -281,6 +292,7 @@ class LightWork_WP_Plugin {
         echo '</tbody></table>';
         echo '<p><button type="button" class="button" id="lw-add-field">' . esc_html__( 'Add Field', 'lightwork-wp-plugin' ) . '</button></p>';
         echo '</td></tr>';
+
         echo '<tr><th scope="row">' . esc_html__( 'Public', 'lightwork-wp-plugin' ) . '</th><td><input type="checkbox" name="lw-public" value="1"' . checked( $public, true, false ) . ' /></td></tr>';
         echo '<tr><th scope="row">' . esc_html__( 'Has Archive', 'lightwork-wp-plugin' ) . '</th><td><input type="checkbox" name="lw-archive" value="1"' . checked( $archive, true, false ) . ' /></td></tr>';
         echo '</table>';
@@ -289,6 +301,7 @@ class LightWork_WP_Plugin {
         }
         submit_button( $editing ? __( 'Save Changes', 'lightwork-wp-plugin' ) : __( 'Create CPT', 'lightwork-wp-plugin' ), 'primary', 'lw_save_cpt' );
         echo '</form>';
+
         ?>
         <script>
         jQuery(function($){
@@ -312,6 +325,7 @@ class LightWork_WP_Plugin {
         });
         </script>
         <?php
+
     }
 
     /**
@@ -323,6 +337,7 @@ class LightWork_WP_Plugin {
         $slug     = isset( $_POST['lw-slug'] ) ? sanitize_key( $_POST['lw-slug'] ) : '';
         $single   = isset( $_POST['lw-single'] ) ? sanitize_text_field( $_POST['lw-single'] ) : '';
         $plural   = isset( $_POST['lw-plural'] ) ? sanitize_text_field( $_POST['lw-plural'] ) : '';
+
         $public       = isset( $_POST['lw-public'] );
         $archive      = isset( $_POST['lw-archive'] );
         $supports     = isset( $_POST['lw-supports'] ) ? array_map( 'sanitize_key', (array) $_POST['lw-supports'] ) : [];
@@ -345,6 +360,7 @@ class LightWork_WP_Plugin {
             ];
         }
 
+
         if ( empty( $slug ) || empty( $single ) || empty( $plural ) ) {
             add_settings_error( 'lightwork', 'invalid', __( 'All fields are required.', 'lightwork-wp-plugin' ) );
             return;
@@ -356,6 +372,7 @@ class LightWork_WP_Plugin {
             foreach ( $cpts as &$cpt ) {
                 if ( $cpt['slug'] === $old_slug ) {
                     $cpt = [
+
                         'slug'         => $slug,
                         'single'       => $single,
                         'plural'       => $plural,
@@ -366,6 +383,7 @@ class LightWork_WP_Plugin {
                         'menu_icon'    => $menu_icon,
                         'rewrite_slug' => $rewrite_slug,
                         'hierarchical' => $hierarchical,
+
                     ];
                     if ( $old_slug !== $slug ) {
                         global $wpdb;
@@ -378,6 +396,7 @@ class LightWork_WP_Plugin {
             $message = __( 'Custom Post Type updated.', 'lightwork-wp-plugin' );
         } else {
             $cpts[] = [
+
                 'slug'         => $slug,
                 'single'       => $single,
                 'plural'       => $plural,
@@ -388,6 +407,7 @@ class LightWork_WP_Plugin {
                 'menu_icon'    => $menu_icon,
                 'rewrite_slug' => $rewrite_slug,
                 'hierarchical' => $hierarchical,
+
             ];
             $message = __( 'Custom Post Type created.', 'lightwork-wp-plugin' );
         }
@@ -400,6 +420,7 @@ class LightWork_WP_Plugin {
             'public'      => $public,
             'has_archive' => $archive,
             'supports'    => $supports,
+
             'acf_fields'  => $acf_fields,
             'menu_icon'   => $menu_icon,
             'rewrite_slug'=> $rewrite_slug,
@@ -427,6 +448,7 @@ class LightWork_WP_Plugin {
         if ( function_exists( 'unregister_post_type' ) ) {
             unregister_post_type( $slug );
         }
+
 
         add_settings_error( 'lightwork', 'deleted', __( 'Custom Post Type deleted.', 'lightwork-wp-plugin' ), 'updated' );
     }
