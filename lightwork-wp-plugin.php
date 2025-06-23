@@ -3,7 +3,7 @@
  * Plugin Name: LightWork WP Plugin
  * Description: Gestione dei Custom Post Types integrata con ACF e REST API.
 
- * Version: 0.3.0
+ * Version: 0.3.1
  * Author: LightWork
  * License: GPLv2 or later
  */
@@ -86,6 +86,7 @@ class LightWork_WP_Plugin {
         register_post_type( $slug, $args );
 
         $this->register_acf_fields( $slug, $fields );
+        $this->add_quick_edit_support( $slug, $fields );
     }
 
     /**
@@ -142,6 +143,89 @@ class LightWork_WP_Plugin {
                 ],
             ],
         ] );
+    }
+
+    /**
+     * Add Quick Edit support for ACF fields.
+     *
+     * @param string $slug   Post type slug.
+     * @param array  $fields Array of ACF fields.
+     */
+    private function add_quick_edit_support( $slug, array $fields ) {
+        if ( empty( $fields ) ) {
+            return;
+        }
+
+        add_filter( "manage_edit-{$slug}_columns", function ( $cols ) use ( $fields ) {
+            foreach ( $fields as $field ) {
+                $name = sanitize_key( $field['name'] );
+                $cols[ $name ] = esc_html( $field['label'] );
+            }
+            return $cols;
+        } );
+
+        add_action( "manage_{$slug}_posts_custom_column", function ( $column, $post_id ) use ( $fields ) {
+            foreach ( $fields as $field ) {
+                $name = sanitize_key( $field['name'] );
+                if ( $column === $name ) {
+                    echo '<span class="lw-' . esc_attr( $name ) . '">' . esc_html( get_post_meta( $post_id, $name, true ) ) . '</span>';
+                    return;
+                }
+            }
+        }, 10, 2 );
+
+        add_action( 'quick_edit_custom_box', function ( $column_name, $post_type ) use ( $slug, $fields ) {
+            if ( $post_type !== $slug ) {
+                return;
+            }
+            foreach ( $fields as $field ) {
+                $name = sanitize_key( $field['name'] );
+                if ( $column_name === $name ) {
+                    echo '<fieldset class="inline-edit-col">';
+                    echo '<label>';
+                    echo '<span class="title">' . esc_html( $field['label'] ) . '</span>';
+                    echo '<span class="input-text-wrap"><input type="text" name="' . esc_attr( $name ) . '" /></span>';
+                    echo '</label>';
+                    echo '</fieldset>';
+                }
+            }
+        }, 10, 2 );
+
+        add_action( "save_post_{$slug}", function ( $post_id ) use ( $fields ) {
+            if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) {
+                return;
+            }
+            foreach ( $fields as $field ) {
+                $name = sanitize_key( $field['name'] );
+                if ( isset( $_POST[ $name ] ) ) {
+                    update_post_meta( $post_id, $name, sanitize_text_field( $_POST[ $name ] ) );
+                }
+            }
+        } );
+
+        add_action( 'admin_footer-edit.php', function () use ( $slug, $fields ) {
+            $screen = get_current_screen();
+            if ( $screen->post_type !== $slug ) {
+                return;
+            }
+            $js = [];
+            foreach ( $fields as $field ) {
+                $name = sanitize_key( $field['name'] );
+                $js[] = "var val_{$name} = jQuery('#post-' + id).find('.lw-{$name}').text();jQuery('#edit-' + id + ' input[name=\\'{$name}\\']').val(val_{$name});";
+            }
+            ?>
+            <script>
+            jQuery(function($){
+                var $edit = inlineEditPost.edit;
+                inlineEditPost.edit = function(id){
+                    $edit.apply(this, arguments);
+                    id = typeof(id) === 'object' ? $(id).attr('id').replace('post-','') : id;
+                    <?php echo implode( '', $js ); ?>
+                };
+            });
+            </script>
+            <?php
+        } );
     }
 
     /**
@@ -245,6 +329,7 @@ class LightWork_WP_Plugin {
 
         $supports      = isset( $cpt['supports'] ) && is_array( $cpt['supports'] ) ? $cpt['supports'] : [ 'title', 'editor', 'thumbnail' ];
         $acf_fields    = isset( $cpt['acf_fields'] ) && is_array( $cpt['acf_fields'] ) ? $cpt['acf_fields'] : [];
+        $acf_enabled   = ! empty( $acf_fields );
         $menu_icon     = $cpt['menu_icon'] ?? '';
         $rewrite_slug  = $cpt['rewrite_slug'] ?? $slug;
         $hierarchical  = isset( $cpt['hierarchical'] ) ? (bool) $cpt['hierarchical'] : false;
@@ -261,7 +346,10 @@ class LightWork_WP_Plugin {
 
         echo '<tr><th scope="row"><label for="lw-menu-icon">' . esc_html__( 'Menu Icon', 'lightwork-wp-plugin' ) . '</label></th><td><input name="lw-menu-icon" id="lw-menu-icon" type="text" class="regular-text" value="' . esc_attr( $menu_icon ) . '" placeholder="dashicons-admin-post" ></td></tr>';
         echo '<tr><th scope="row"><label for="lw-rewrite-slug">' . esc_html__( 'Rewrite Slug', 'lightwork-wp-plugin' ) . '</label></th><td><input name="lw-rewrite-slug" id="lw-rewrite-slug" type="text" class="regular-text" value="' . esc_attr( $rewrite_slug ) . '"></td></tr>';
-        echo '<tr><th scope="row">' . esc_html__( 'Hierarchical', 'lightwork-wp-plugin' ) . '</th><td><input type="checkbox" name="lw-hierarchical" value="1"' . checked( $hierarchical, true, false ) . ' /></td></tr>';
+        echo '<tr><th scope="row">' . esc_html__( 'Hierarchical', 'lightwork-wp-plugin' ) . '</th><td><input type="checkbox" name="lw-hierarchical" value="1"' . checked( $hierarchical, true, false ) . ' />';
+        echo '<p class="description">' . esc_html__( 'If enabled, the CPT behaves like pages (hierarchical). Choose carefully when creating.', 'lightwork-wp-plugin' ) . '</p></td></tr>';
+
+        echo '<tr><th scope="row">' . esc_html__( 'Supports', 'lightwork-wp-plugin' ) . '</th><td>';
 
         echo '<tr><th scope="row">' . esc_html__( 'Supports', 'lightwork-wp-plugin' ) . '</th><td>';
         foreach ( $available as $feature ) {
@@ -269,7 +357,9 @@ class LightWork_WP_Plugin {
         }
         echo '</td></tr>';
 
-        echo '<tr><th scope="row">' . esc_html__( 'ACF Fields', 'lightwork-wp-plugin' ) . '</th><td>';
+        echo '<tr><th scope="row">' . esc_html__( 'Enable ACF', 'lightwork-wp-plugin' ) . '</th><td><label><input type="checkbox" id="lw-enable-acf" name="lw-enable-acf" value="1"' . checked( $acf_enabled, true, false ) . ' /> ' . esc_html__( 'Add custom fields', 'lightwork-wp-plugin' ) . '</label><p class="description">' . esc_html__( 'Check to add custom fields with ACF.', 'lightwork-wp-plugin' ) . '</p></td></tr>';
+
+        echo '<tr id="lw-acf-section"><th scope="row">' . esc_html__( 'ACF Fields', 'lightwork-wp-plugin' ) . '</th><td>';
         echo '<table id="lw-acf-table" class="widefat"><tbody>';
         if ( ! empty( $acf_fields ) ) {
             foreach ( $acf_fields as $field ) {
@@ -293,8 +383,10 @@ class LightWork_WP_Plugin {
         echo '<p><button type="button" class="button" id="lw-add-field">' . esc_html__( 'Add Field', 'lightwork-wp-plugin' ) . '</button></p>';
         echo '</td></tr>';
 
-        echo '<tr><th scope="row">' . esc_html__( 'Public', 'lightwork-wp-plugin' ) . '</th><td><input type="checkbox" name="lw-public" value="1"' . checked( $public, true, false ) . ' /></td></tr>';
-        echo '<tr><th scope="row">' . esc_html__( 'Has Archive', 'lightwork-wp-plugin' ) . '</th><td><input type="checkbox" name="lw-archive" value="1"' . checked( $archive, true, false ) . ' /></td></tr>';
+        echo '<tr><th scope="row">' . esc_html__( 'Public', 'lightwork-wp-plugin' ) . '</th><td><input type="checkbox" name="lw-public" value="1"' . checked( $public, true, false ) . ' />';
+        echo '<p class="description">' . esc_html__( 'Visibility of the CPT on the frontend.', 'lightwork-wp-plugin' ) . '</p></td></tr>';
+        echo '<tr><th scope="row">' . esc_html__( 'Has Archive', 'lightwork-wp-plugin' ) . '</th><td><input type="checkbox" name="lw-archive" value="1"' . checked( $archive, true, false ) . ' />';
+        echo '<p class="description">' . esc_html__( 'Enable an archive page for this CPT.', 'lightwork-wp-plugin' ) . '</p></td></tr>';
         echo '</table>';
         if ( $editing ) {
             echo '<input type="hidden" name="lw-old-slug" value="' . esc_attr( $slug ) . '" />';
@@ -322,6 +414,15 @@ class LightWork_WP_Plugin {
             $(document).on('click', '.lw-remove-field', function(){
                 $(this).closest('tr').remove();
             });
+            function toggle_acf(){
+                if($('#lw-enable-acf').is(':checked')){
+                    $('#lw-acf-section').show();
+                }else{
+                    $('#lw-acf-section').hide();
+                }
+            }
+            $('#lw-enable-acf').on('change', toggle_acf);
+            toggle_acf();
         });
         </script>
         <?php
@@ -344,20 +445,23 @@ class LightWork_WP_Plugin {
         $menu_icon    = isset( $_POST['lw-menu-icon'] ) ? sanitize_text_field( $_POST['lw-menu-icon'] ) : '';
         $rewrite_slug = isset( $_POST['lw-rewrite-slug'] ) ? sanitize_title_with_dashes( $_POST['lw-rewrite-slug'] ) : $slug;
         $hierarchical = isset( $_POST['lw-hierarchical'] );
-        $labels   = isset( $_POST['lw-acf-labels'] ) ? (array) $_POST['lw-acf-labels'] : [];
-        $names    = isset( $_POST['lw-acf-names'] ) ? (array) $_POST['lw-acf-names'] : [];
-        $types    = isset( $_POST['lw-acf-types'] ) ? (array) $_POST['lw-acf-types'] : [];
+        $acf_on   = isset( $_POST['lw-enable-acf'] );
+        $labels   = $acf_on ? (array) ( $_POST['lw-acf-labels'] ?? [] ) : [];
+        $names    = $acf_on ? (array) ( $_POST['lw-acf-names'] ?? [] ) : [];
+        $types    = $acf_on ? (array) ( $_POST['lw-acf-types'] ?? [] ) : [];
         $acf_fields = [];
-        foreach ( $names as $index => $name ) {
-            $name = sanitize_key( $name );
-            if ( ! $name ) {
-                continue;
+        if ( $acf_on ) {
+            foreach ( $names as $index => $name ) {
+                $name = sanitize_key( $name );
+                if ( ! $name ) {
+                    continue;
+                }
+                $acf_fields[] = [
+                    'label' => sanitize_text_field( $labels[ $index ] ?? $name ),
+                    'name'  => $name,
+                    'type'  => sanitize_text_field( $types[ $index ] ?? 'text' ),
+                ];
             }
-            $acf_fields[] = [
-                'label' => sanitize_text_field( $labels[ $index ] ?? $name ),
-                'name'  => $name,
-                'type'  => sanitize_text_field( $types[ $index ] ?? 'text' ),
-            ];
         }
 
 
