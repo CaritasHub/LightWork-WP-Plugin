@@ -22,7 +22,6 @@ class LightWork_WP_Plugin {
     /** @var LightWork_Template_Editor */
     private $template_editor;
 
-
     public function __construct() {
         $this->template_editor = new LightWork_Template_Editor();
         add_action( 'init', [ $this, 'register_saved_cpts' ] );
@@ -252,6 +251,7 @@ class LightWork_WP_Plugin {
         );
 
         $this->template_editor->register_page();
+
     }
 
     /**
@@ -473,6 +473,8 @@ class LightWork_WP_Plugin {
     /**
      * Render the template editor for a CPT.
      */
+
+
 
     /**
      * Handle CPT creation or update form submission.
