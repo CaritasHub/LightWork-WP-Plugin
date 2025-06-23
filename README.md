@@ -4,7 +4,7 @@
 
 ## Descrizione
 
-Il **LightWork-WP-Plugin** per WordPress permette di creare, configurare e gestire facilmente **Custom Post Types (CTP)** personalizzati. Grazie all'integrazione con **Advanced Custom Fields (ACF)**, il plugin offre una soluzione potente sia per gli utenti avanzati che per quelli meno esperti. Consente di creare CTP avanzati, associarvi campi personalizzati, template dinamici e fornisce anche rotte REST per una gestione completamente automatizzata dei dati.
+Il **LightWork-WP-Plugin** per WordPress permette di creare, configurare e gestire facilmente **Custom Post Types (CTP)** personalizzati. Grazie all'integrazione con **Advanced Custom Fields (ACF)**, il plugin offre una soluzione potente sia per gli utenti avanzati che per quelli meno esperti. Consente di creare CTP avanzati, associarvi campi personalizzati, template dinamici e fornisce anche rotte REST per una gestione completamente automatizzata dei dati. Dalla versione 0.3 è possibile aggiungere o rimuovere i campi ACF direttamente dalla schermata di modifica del CTP.
 
 Il plugin è progettato per essere facilmente configurabile tramite un **wizard di amministrazione**, con una gestione automatica delle modifiche dei CTP, senza compromettere la performance del sito. Le rotte REST personalizzate permettono una completa personalizzazione delle query, rendendo il plugin ideale per sviluppatori avanzati e per l'uso su siti con un elevato volume di contenuti.
 
@@ -15,6 +15,8 @@ Il plugin è progettato per essere facilmente configurabile tramite un **wizard 
 - Pagina di amministrazione con elenco dei CTP creati e azioni di modifica o cancellazione.
 - Creazione guidata personalizzabile (supporti, visibilità, archivio) simile a CPT UI.
 - Gestione completa dei CTP con tutte le opzioni di configurazione, inclusa la visibilità e i permessi.
+- Possibilità di definire icona del menu, slug di riscrittura e struttura gerarchica del CTP direttamente dall'interfaccia.
+- I campi ACF possono essere aggiunti o rimossi dal form di modifica del CTP e la modifica si applica a tutti gli elementi esistenti.
 - I CTP vengono visualizzati e gestiti nel backend di WordPress in modo intuitivo.
 
 ### 2. Integrazione con ACF (Advanced Custom Fields)
@@ -33,6 +35,7 @@ Il plugin è progettato per essere facilmente configurabile tramite un **wizard 
 ### 5. Interfaccia wizard per amministratori
 - Una **wizard di configurazione** guida l'amministratore passo passo nel processo di creazione e gestione dei CTP.
 - Gli amministratori possono scegliere facilmente i campi personalizzati da associare ai CTP e configurare i template tramite una semplice interfaccia.
+- La pagina di modifica del CTP consente di gestire l'elenco dei campi ACF collegati, applicando le modifiche a tutte le istanze esistenti.
 
 ### 6. Aggiornamenti massivi dei CTP
 - Il plugin supporta l'aggiornamento di più istanze di un CTP in modalità **batch**.
