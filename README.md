@@ -15,7 +15,8 @@ Il plugin è progettato per essere facilmente configurabile tramite un **wizard 
 - Pagina di amministrazione con elenco dei CTP creati e azioni di modifica o cancellazione.
 - Creazione guidata personalizzabile (supporti, visibilità, archivio) simile a CPT UI.
 - Gestione completa dei CTP con tutte le opzioni di configurazione, inclusa la visibilità e i permessi.
-- Possibilità di definire icona del menu, slug di riscrittura e struttura gerarchica del CTP direttamente dall'interfaccia.
+- Possibilità di definire icona del menu tramite un selettore visuale, oltre a slug di riscrittura e struttura gerarchica del CTP direttamente dall'interfaccia.
+- Interfaccia del wizard aggiornata con uno stile moderno e più gradevole.
 - I campi ACF possono essere aggiunti o rimossi dal form di modifica del CTP e la modifica si applica a tutti gli elementi esistenti.
 - I campi ACF possono essere modificati rapidamente tramite la "modifica rapida" nella lista delle istanze del CTP.
 - I CTP vengono visualizzati e gestiti nel backend di WordPress in modo intuitivo.
@@ -28,6 +29,9 @@ Il plugin è progettato per essere facilmente configurabile tramite un **wizard 
 - Ogni CTP può essere associato a un **template dinamico** che si popola automaticamente con i campi ACF.
 - I template possono essere facilmente personalizzati tramite il sistema di temi di WordPress, con la possibilità di aggiungere codice PHP per adattarli alle necessità specifiche.
 - Dalla versione 0.3.2 è disponibile un **Template Editor** drag & drop per mappare visivamente i campi ACF sugli elementi della pagina.
+- Dalla versione 0.3.3 l'interfaccia di creazione dei CTP include un selettore grafico delle icone del menu.
+- Dalla versione 0.3.4 la procedura di creazione è più semplice: alcune opzioni ridondanti sono state rimosse e, se si collega un template, il CPT diventa automaticamente gerarchico.
+- Dalla versione 0.3.5 il pannello di creazione adotta uno stile più moderno per una migliore usabilità.
 
 ### 4. Rotte REST per il recupero dei dati
 - Fornisce **rotte REST** per accedere ai CTP tramite API, con parametri di filtraggio avanzato.
