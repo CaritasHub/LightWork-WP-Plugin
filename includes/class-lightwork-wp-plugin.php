@@ -28,6 +28,7 @@ class LightWork_WP_Plugin {
 
         add_action( 'init', [ $this->cpt_system, 'register_saved_cpts' ] );
         add_action( 'admin_menu', [ $this->cpt_system, 'register_admin_menu' ] );
+        add_action( 'admin_enqueue_scripts', [ $this->cpt_system, 'enqueue_assets' ] );
         add_action( 'rest_api_init', [ $this, 'register_rest_routes' ] );
         add_action( self::CRON_HOOK, [ $this, 'batch_update' ] );
     }
