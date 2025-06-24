@@ -197,7 +197,16 @@ class LightWork_CPT_System {
         echo '<tr><th scope="row"><label for="lw-single">' . esc_html__( 'Singular Label', 'lightwork-wp-plugin' ) . '</label></th><td><input name="lw-single" id="lw-single" type="text" class="regular-text" value="' . esc_attr( $single ) . '" required></td></tr>';
         echo '<tr><th scope="row"><label for="lw-plural">' . esc_html__( 'Plural Label', 'lightwork-wp-plugin' ) . '</label></th><td><input name="lw-plural" id="lw-plural" type="text" class="regular-text" value="' . esc_attr( $plural ) . '" required></td></tr>';
 
-        echo '<tr><th scope="row"><label for="lw-menu-icon">' . esc_html__( 'Menu Icon', 'lightwork-wp-plugin' ) . '</label></th><td><input name="lw-menu-icon" id="lw-menu-icon" type="text" class="regular-text" value="' . esc_attr( $menu_icon ) . '" placeholder="dashicons-admin-post" ></td></tr>';
+        echo '<tr><th scope="row"><label for="lw-menu-icon">' . esc_html__( 'Menu Icon', 'lightwork-wp-plugin' ) . '</label></th><td>';
+        echo '<input name="lw-menu-icon" id="lw-menu-icon" type="text" class="regular-text" value="' . esc_attr( $menu_icon ) . '" placeholder="dashicons-admin-post" /> ';
+        echo '<button type="button" class="button" id="lw-icon-picker-button">' . esc_html__( 'Choose Icon', 'lightwork-wp-plugin' ) . '</button> ';
+        echo '<span id="lw-icon-preview" class="dashicons ' . esc_attr( $menu_icon ) . '" style="margin-left:10px;"></span>';
+        echo '<div id="lw-icon-picker" style="display:none;margin-top:10px;">';
+        $icons = [ 'dashicons-admin-post', 'dashicons-admin-media', 'dashicons-admin-links', 'dashicons-admin-plugins', 'dashicons-format-image', 'dashicons-format-video', 'dashicons-format-gallery', 'dashicons-admin-comments' ];
+        foreach ( $icons as $icon ) {
+            echo '<span class="dashicons ' . esc_attr( $icon ) . ' lw-icon-option" data-icon="' . esc_attr( $icon ) . '" style="font-size:24px;margin:5px;cursor:pointer;"></span>';
+        }
+        echo '</div></td></tr>';
         echo '<tr><th scope="row"><label for="lw-rewrite-slug">' . esc_html__( 'Rewrite Slug', 'lightwork-wp-plugin' ) . '</label></th><td><input name="lw-rewrite-slug" id="lw-rewrite-slug" type="text" class="regular-text" value="' . esc_attr( $rewrite_slug ) . '"></td></tr>';
         echo '<tr><th scope="row">' . esc_html__( 'Hierarchical', 'lightwork-wp-plugin' ) . '</th><td><input type="checkbox" name="lw-hierarchical" value="1"' . checked( $hierarchical, true, false ) . ' />';
         echo '<p class="description">' . esc_html__( 'If enabled, the CPT behaves like pages (hierarchical). Choose carefully when creating.', 'lightwork-wp-plugin' ) . '</p></td></tr>';
@@ -296,6 +305,19 @@ class LightWork_CPT_System {
             }
             $('#lw-use-template').on('change', toggle_template);
             toggle_template();
+
+            $('#lw-icon-picker-button').on('click', function(){
+                $('#lw-icon-picker').toggle();
+            });
+            $(document).on('click', '.lw-icon-option', function(){
+                var icon = $(this).data('icon');
+                $('#lw-menu-icon').val(icon);
+                $('#lw-icon-preview').attr('class', 'dashicons ' + icon);
+                $('#lw-icon-picker').hide();
+            });
+            $('#lw-menu-icon').on('input', function(){
+                $('#lw-icon-preview').attr('class', 'dashicons ' + $(this).val());
+            });
         });
         </script>
         <?php
