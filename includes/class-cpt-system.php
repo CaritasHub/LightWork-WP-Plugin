@@ -16,6 +16,21 @@ class LightWork_CPT_System {
     }
 
     /**
+     * Enqueue admin styles for plugin pages.
+     */
+    public function enqueue_assets( $hook ) {
+        if ( strpos( $hook, 'lightwork-wp-plugin' ) === false ) {
+            return;
+        }
+        wp_enqueue_style(
+            'lightwork-admin',
+            plugins_url( 'assets/admin.css', dirname( __DIR__ ) . '/lightwork-wp-plugin.php' ),
+            [],
+            '0.3.5'
+        );
+    }
+
+    /**
      * Register saved Custom Post Types on init.
      */
     public function register_saved_cpts() {
@@ -190,7 +205,7 @@ class LightWork_CPT_System {
         $available     = [ 'title', 'editor', 'thumbnail', 'excerpt', 'custom-fields' ];
 
         echo '<h2>' . ( $editing ? esc_html__( 'Edit Custom Post Type', 'lightwork-wp-plugin' ) : esc_html__( 'Add Custom Post Type', 'lightwork-wp-plugin' ) ) . '</h2>';
-        echo '<form method="post">';
+        echo '<form method="post" id="lw-cpt-form">';
         wp_nonce_field( 'lw_save_cpt_nonce' );
         echo '<table class="form-table" role="presentation">';
         echo '<tr><th scope="row"><label for="lw-slug">' . esc_html__( 'Slug', 'lightwork-wp-plugin' ) . '</label></th><td><input name="lw-slug" id="lw-slug" type="text" class="regular-text" value="' . esc_attr( $slug ) . '" required></td></tr>';
@@ -200,11 +215,11 @@ class LightWork_CPT_System {
         echo '<tr><th scope="row"><label for="lw-menu-icon">' . esc_html__( 'Menu Icon', 'lightwork-wp-plugin' ) . '</label></th><td>';
         echo '<input name="lw-menu-icon" id="lw-menu-icon" type="text" class="regular-text" value="' . esc_attr( $menu_icon ) . '" placeholder="dashicons-admin-post" /> ';
         echo '<button type="button" class="button" id="lw-icon-picker-button">' . esc_html__( 'Choose Icon', 'lightwork-wp-plugin' ) . '</button> ';
-        echo '<span id="lw-icon-preview" class="dashicons ' . esc_attr( $menu_icon ) . '" style="margin-left:10px;"></span>';
-        echo '<div id="lw-icon-picker" style="display:none;margin-top:10px;">';
+        echo '<span id="lw-icon-preview" class="dashicons ' . esc_attr( $menu_icon ) . '"></span>';
+        echo '<div id="lw-icon-picker">';
         $icons = [ 'dashicons-admin-post', 'dashicons-admin-media', 'dashicons-admin-links', 'dashicons-admin-plugins', 'dashicons-format-image', 'dashicons-format-video', 'dashicons-format-gallery', 'dashicons-admin-comments' ];
         foreach ( $icons as $icon ) {
-            echo '<span class="dashicons ' . esc_attr( $icon ) . ' lw-icon-option" data-icon="' . esc_attr( $icon ) . '" style="font-size:24px;margin:5px;cursor:pointer;"></span>';
+            echo '<span class="dashicons ' . esc_attr( $icon ) . ' lw-icon-option" data-icon="' . esc_attr( $icon ) . '"></span>';
         }
         echo '</div></td></tr>';
         echo '<tr><th scope="row"><label for="lw-rewrite-slug">' . esc_html__( 'Rewrite Slug', 'lightwork-wp-plugin' ) . '</label></th><td><input name="lw-rewrite-slug" id="lw-rewrite-slug" type="text" class="regular-text" value="' . esc_attr( $rewrite_slug ) . '"></td></tr>';
@@ -262,12 +277,6 @@ class LightWork_CPT_System {
         submit_button( $editing ? __( 'Save Changes', 'lightwork-wp-plugin' ) : __( 'Create CPT', 'lightwork-wp-plugin' ), 'primary', 'lw_save_cpt' );
         echo '</form>';
         ?>
-        <style>
-        #lw-icon-picker{display:flex;flex-wrap:wrap;gap:5px;margin-top:10px;}
-        #lw-icon-picker .dashicons{font-size:24px;cursor:pointer;}
-        #lw-icon-preview{font-size:24px;margin-left:10px;}
-        #lw-acf-table input,#lw-acf-table select{margin-right:5px;}
-        </style>
         <script>
         jQuery(function($){
             $('#lw-add-field').on('click', function(){

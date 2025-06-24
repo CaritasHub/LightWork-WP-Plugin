@@ -1,0 +1,57 @@
+#lw-cpt-form{
+    background:#fff;
+    border:1px solid #ccd0d4;
+    padding:20px;
+    border-radius:8px;
+    box-shadow:0 1px 2px rgba(0,0,0,0.05);
+    max-width:900px;
+}
+
+#lw-cpt-form .form-table th{
+    padding-left:0;
+}
+
+#lw-cpt-form .form-table input[type=text],
+#lw-cpt-form .form-table select{
+    width:100%;
+    max-width:280px;
+}
+
+#lw-cpt-form .form-table td{
+    vertical-align:top;
+}
+
+#lw-icon-picker{
+    display:none;
+    flex-wrap:wrap;
+    gap:10px;
+    margin-top:10px;
+    background:#fff;
+    border:1px solid #ccd0d4;
+    padding:10px;
+    box-shadow:0 2px 4px rgba(0,0,0,0.1);
+}
+
+#lw-icon-picker .dashicons{
+    font-size:28px;
+    cursor:pointer;
+    padding:8px;
+    border-radius:4px;
+}
+
+#lw-icon-picker .dashicons:hover{
+    background:#f0f0f0;
+}
+
+#lw-icon-preview{
+    font-size:24px;
+    margin-left:10px;
+}
+
+#lw-acf-table input,#lw-acf-table select{
+    margin-right:5px;
+}
+
+#lw-acf-table .lw-remove-field{
+    margin-left:5px;
+}
