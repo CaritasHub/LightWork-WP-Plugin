@@ -29,6 +29,7 @@ Il plugin è progettato per essere facilmente configurabile tramite un **wizard 
 - I template possono essere facilmente personalizzati tramite il sistema di temi di WordPress, con la possibilità di aggiungere codice PHP per adattarli alle necessità specifiche.
 - Dalla versione 0.3.2 è disponibile un **Template Editor** drag & drop per mappare visivamente i campi ACF sugli elementi della pagina.
 - Dalla versione 0.3.3 l'interfaccia di creazione dei CTP include un selettore grafico delle icone del menu.
+- Dalla versione 0.3.4 la procedura di creazione è più semplice: alcune opzioni ridondanti sono state rimosse e, se si collega un template, il CPT diventa automaticamente gerarchico.
 
 ### 4. Rotte REST per il recupero dei dati
 - Fornisce **rotte REST** per accedere ai CTP tramite API, con parametri di filtraggio avanzato.
