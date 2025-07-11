@@ -19,3 +19,4 @@ ARCHIVE_NAME="lightwork-plugin-${VERSION}.tar.gz"
 tar -czf "$RELEASE_DIR/$ARCHIVE_NAME" -C "$PLUGIN_DIR" .
 
 echo "Created $RELEASE_DIR/$ARCHIVE_NAME"
+
