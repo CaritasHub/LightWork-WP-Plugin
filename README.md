@@ -199,10 +199,10 @@ Il workflow genererà il pacchetto `lightwork-wp-plugin.zip` e lo allegherà all
 
 ## Creazione di una Release
 
-Esegui `./build_release.sh` per creare un archivio tarball del plugin. L’archivio verrà salvato nella directory `Release/` e sarà nominato in base alla versione definita all’interno di `lightwork-wp-plugin.php`.
+Esegui `./build_release.sh` per creare un archivio **zip** del plugin. L’archivio verrà salvato nella directory `Release/` e sarà nominato in base alla versione definita all’interno di `lightwork-wp-plugin.php`.
 
 ## Test Locale con Docker
 
-1. Crea l’archivio del plugin con `./build_release.sh`.
-2. Avvia l’ambiente con `docker-compose up --build`.
+1. Avvia l’ambiente con `docker-compose up --build`.
+2. Grazie al volume definito in `docker-compose.yml`, ogni modifica nella cartella `Lightwork-plugin` viene applicata in tempo reale all’interno di WordPress.
 3. WordPress sarà disponibile su [http://localhost:8080](http://localhost:8080) con il plugin già installato.

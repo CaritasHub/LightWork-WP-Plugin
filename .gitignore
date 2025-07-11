@@ -1,5 +1,4 @@
 # Ignore release archives
-Release/*.tar.gz
 Release/*.zip
 
 # Ignore volumes for docker

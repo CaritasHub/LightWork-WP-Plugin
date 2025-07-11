@@ -1,10 +1,15 @@
 FROM wordpress:latest
 
+# Install unzip for extracting the plugin
+RUN apt-get update \
+    && apt-get install -y unzip \
+    && rm -rf /var/lib/apt/lists/*
+
 # Copy plugin archive into image
-COPY Release/*.tar.gz /tmp/plugin.tar.gz
+COPY Release/*.zip /tmp/plugin.zip
 
 # Extract plugin
 RUN mkdir -p /usr/src/wordpress/wp-content/plugins/lightwork-plugin \
-    && tar -xzf /tmp/plugin.tar.gz -C /usr/src/wordpress/wp-content/plugins/lightwork-plugin --strip-components=1 \
-    && rm /tmp/plugin.tar.gz
+    && unzip /tmp/plugin.zip -d /usr/src/wordpress/wp-content/plugins/lightwork-plugin \
+    && rm /tmp/plugin.zip
 
