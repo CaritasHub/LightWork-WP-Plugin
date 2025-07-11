@@ -12,11 +12,10 @@ if [ -z "$VERSION" ]; then
     VERSION="latest"
 fi
 
-ARCHIVE_NAME="lightwork-plugin-${VERSION}.tar.gz"
+ARCHIVE_NAME="lightwork-plugin-${VERSION}.zip"
 
 # Create archive
-
-tar -czf "$RELEASE_DIR/$ARCHIVE_NAME" -C "$PLUGIN_DIR" .
+(cd "$PLUGIN_DIR" && zip -r "$RELEASE_DIR/$ARCHIVE_NAME" .)
 
 echo "Created $RELEASE_DIR/$ARCHIVE_NAME"
 
