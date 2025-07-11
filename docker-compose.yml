@@ -1,6 +1,6 @@
 services:
   wordpress:
-    image: wordpress
+    build: .
     restart: always
     ports:
       - 8080:80
