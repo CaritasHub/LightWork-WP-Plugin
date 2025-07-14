@@ -66,7 +66,7 @@ class LightWork_Sandbox_Editor {
             'lw-sandbox',
             plugins_url( 'assets/sandbox.js', dirname( __DIR__ ) . '/lightwork-wp-plugin.php' ),
             [ 'jquery', 'jquery-ui-draggable', 'jquery-ui-droppable' ],
-            '0.3.9',
+            '0.4.0',
 
             true
         );
@@ -75,7 +75,7 @@ class LightWork_Sandbox_Editor {
             plugins_url( 'assets/sandbox.css', dirname( __DIR__ ) . '/lightwork-wp-plugin.php' ),
             [],
 
-            '0.3.9'
+            '0.4.0'
         );
         $fields = [];
         if ( isset( $_GET['slug'] ) ) {
