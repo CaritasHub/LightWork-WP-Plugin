@@ -13,6 +13,7 @@ class LightWork_CPT_System {
     public function __construct( LightWork_ACF_System $acf, LightWork_Template_Editor $editor ) {
         $this->acf    = $acf;
         $this->editor = $editor;
+        add_action( 'enqueue_block_editor_assets', [ $this, 'enqueue_editor_assets' ] );
     }
 
     /**
@@ -26,7 +27,7 @@ class LightWork_CPT_System {
             'lightwork-admin',
             plugins_url( 'assets/admin.css', dirname( __DIR__ ) . '/lightwork-wp-plugin.php' ),
             [],
-            '0.3.5'
+            '0.3.6'
         );
     }
 
@@ -478,5 +479,44 @@ class LightWork_CPT_System {
         }
 
         add_settings_error( 'lightwork', 'deleted', __( 'Custom Post Type deleted.', 'lightwork-wp-plugin' ), 'updated' );
+    }
+
+    public function enqueue_editor_assets() {
+        $screen = get_current_screen();
+        if ( ! $screen || ( $screen->base !== 'post' && $screen->base !== 'post-new' ) ) {
+            return;
+        }
+        $cpts = get_option( LightWork_WP_Plugin::OPTION_CPTS, [] );
+        foreach ( $cpts as $cpt ) {
+            if ( $screen->post_type === $cpt['slug'] ) {
+                $mapping = get_option( LightWork_Template_Editor::OPTION_PREFIX . $cpt['slug'], [] );
+                $fields  = [];
+                foreach ( $cpt['acf_fields'] as $f ) {
+                    $fields[] = [ 'name' => $f['name'], 'label' => $f['label'] ];
+                }
+                wp_enqueue_script(
+                    'lw-editor-addon',
+                    plugins_url( 'assets/editor-addon.js', dirname( __DIR__ ) . '/lightwork-wp-plugin.php' ),
+                    [ 'jquery', 'jquery-ui-draggable', 'jquery-ui-droppable' ],
+                    '0.3.6',
+                    true
+                );
+                wp_enqueue_style(
+                    'lw-editor-addon',
+                    plugins_url( 'assets/editor-addon.css', dirname( __DIR__ ) . '/lightwork-wp-plugin.php' ),
+                    [],
+                    '0.3.6'
+                );
+                wp_localize_script( 'lw-editor-addon', 'lwFieldData', [
+                    'slug'    => $cpt['slug'],
+                    'fields'  => $fields,
+                    'mapping' => $mapping,
+                    'ajaxurl' => admin_url( 'admin-ajax.php' ),
+                    'nonce'   => wp_create_nonce( 'lw_update_mapping' ),
+                    'label'   => __( 'Map ACF Fields', 'lightwork-wp-plugin' ),
+                ] );
+                break;
+            }
+        }
     }
 }

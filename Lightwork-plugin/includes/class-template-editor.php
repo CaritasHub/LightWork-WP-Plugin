@@ -6,6 +6,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 class LightWork_Template_Editor {
     const OPTION_PREFIX = 'lw_template_map_';
 
+    public function __construct() {
+        add_action( 'add_meta_boxes', [ $this, 'add_meta_boxes' ] );
+        add_action( 'wp_ajax_lw_update_mapping', [ $this, 'ajax_update_mapping' ] );
+    }
+
     public function register_page() {
         add_submenu_page(
             null,
@@ -76,11 +81,13 @@ class LightWork_Template_Editor {
                         <?php wp_nonce_field( 'lw_save_template_' . $slug ); ?>
                         <?php foreach ( $acf_fields as $field ) :
                             $name  = esc_attr( $field['name'] );
-                            $label = esc_html( $field['label'] );
-                            $sel   = esc_attr( $mapping[ $name ] ?? '' ); ?>
+                            if ( ! empty( $mapping[ $name ] ) ) {
+                                continue;
+                            }
+                            $label = esc_html( $field['label'] ); ?>
                             <div class="lw-field" data-field="<?php echo $name; ?>">
                                 <?php echo $label; ?>
-                                <input type="hidden" name="lw-mapping[<?php echo $name; ?>]" value="<?php echo $sel; ?>" />
+                                <input type="hidden" name="lw-mapping[<?php echo $name; ?>]" value="" />
                             </div>
                         <?php endforeach; ?>
                         <p><input type="submit" name="lw-save-template" class="button button-primary" value="<?php esc_attr_e( 'Save Template', 'lightwork-wp-plugin' ); ?>" /></p>
@@ -120,5 +127,43 @@ class LightWork_Template_Editor {
         });
         </script>
         <?php
+    }
+
+    public function add_meta_boxes() {
+        $cpts = get_option( LightWork_WP_Plugin::OPTION_CPTS, [] );
+        foreach ( $cpts as $cpt ) {
+            add_meta_box(
+                'lw-template-editor',
+                __( 'Template', 'lightwork-wp-plugin' ),
+                function () use ( $cpt ) {
+                    if ( empty( $cpt['template_page'] ) ) {
+                        return;
+                    }
+                    $link = admin_url( 'admin.php?page=lightwork-template-editor&slug=' . $cpt['slug'] );
+                    echo '<a href="' . esc_url( $link ) . '" class="button">' . esc_html__( 'Edit Template', 'lightwork-wp-plugin' ) . '</a>';
+                },
+                $cpt['slug'],
+                'side',
+                'high'
+            );
+        }
+    }
+
+    public function ajax_update_mapping() {
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_send_json_error();
+        }
+        check_ajax_referer( 'lw_update_mapping', 'nonce' );
+        $slug     = sanitize_key( $_POST['slug'] ?? '' );
+        $field    = sanitize_key( $_POST['field'] ?? '' );
+        $selector = sanitize_text_field( $_POST['selector'] ?? '' );
+        if ( ! $slug || ! $field ) {
+            wp_send_json_error();
+        }
+        $option          = self::OPTION_PREFIX . $slug;
+        $mapping         = get_option( $option, [] );
+        $mapping[ $field ] = $selector;
+        update_option( $option, $mapping );
+        wp_send_json_success();
     }
 }
