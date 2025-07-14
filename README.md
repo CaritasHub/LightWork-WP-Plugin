@@ -35,6 +35,7 @@ Il plugin è progettato per essere facilmente configurabile tramite un **wizard 
 - Dalla versione 0.3.3 l'interfaccia di creazione dei CTP include un selettore grafico delle icone del menu.
 - Dalla versione 0.3.4 la procedura di creazione è più semplice: alcune opzioni ridondanti sono state rimosse e, se si collega un template, il CPT diventa automaticamente gerarchico.
 - Dalla versione 0.3.5 il pannello di creazione adotta uno stile più moderno per una migliore usabilità.
+- Dalla versione 0.3.6 il Template Editor è integrato nell'editor di Gutenberg con un pulsante che consente di trascinare i campi ACF non mappati direttamente sugli elementi della pagina.
 
 ### 4. Rotte REST per il recupero dei dati
 
