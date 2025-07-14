@@ -5,3 +5,4 @@ Release/*.zip
 wordpress
 node_modules
 
+/Release
