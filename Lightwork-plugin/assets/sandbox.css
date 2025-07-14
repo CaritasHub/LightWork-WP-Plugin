@@ -1,0 +1,10 @@
+#lw-sandbox{display:flex;gap:10px;height:600px}
+#lw-preview{flex:1;overflow:auto;border:1px solid #ccd0d4;}
+#lw-preview iframe{width:100%;height:100%;border:0;}
+#lw-editors{flex:1;display:flex;flex-direction:column;min-width:300px;}
+#lw-html{flex:1;height:200px;font-family:monospace;}
+#lw-sub{display:flex;flex:1;gap:5px;}
+#lw-sub textarea{flex:1;font-family:monospace;}
+#lw-fields{margin-top:10px;}
+#lw-fields .lw-field{border:1px solid #ccc;padding:5px;margin-bottom:5px;cursor:move;background:#fff;}
+#lw-preview .lw-highlight{outline:2px dashed red;}

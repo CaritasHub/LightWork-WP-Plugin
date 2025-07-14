@@ -172,7 +172,7 @@ class LightWork_CPT_System {
             $delete = wp_nonce_url( admin_url( 'admin.php?page=lightwork-wp-plugin&action=delete&slug=' . $cpt['slug'] ), 'lw_delete_cpt_' . $cpt['slug'] );
             $template = '';
             if ( ! empty( $cpt['template_page'] ) ) {
-                $tlink = admin_url( 'admin.php?page=lightwork-template-editor&slug=' . $cpt['slug'] );
+                $tlink = admin_url( 'admin.php?page=lightwork-sandbox-editor&slug=' . $cpt['slug'] );
                 $template = ' | <a href="' . esc_url( $tlink ) . '">' . esc_html__( 'Template', 'lightwork-wp-plugin' ) . '</a>';
             }
             echo '<tr>';
@@ -455,7 +455,7 @@ class LightWork_CPT_System {
 
         add_settings_error( 'lightwork', 'success', $message, 'updated' );
         if ( $use_template ) {
-            $link = admin_url( 'admin.php?page=lightwork-template-editor&slug=' . $slug );
+            $link = admin_url( 'admin.php?page=lightwork-sandbox-editor&slug=' . $slug );
             add_settings_error( 'lightwork', 'template', sprintf( __( 'Configure the template <a href="%s">here</a>.', 'lightwork-wp-plugin' ), esc_url( $link ) ), 'updated' );
         }
     }
