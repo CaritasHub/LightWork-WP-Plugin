@@ -5,11 +5,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 class LightWork_Sandbox_Editor {
     const OPTION_NAME = 'lw_sandbox_html';
+
     const PAGE_OPTION = 'lw_sandbox_page_id';
 
     public function register_page() {
         add_submenu_page(
             'lightwork-wp-plugin',
+
             __( 'Sandbox Editor', 'lightwork-wp-plugin' ),
             __( 'Sandbox Editor', 'lightwork-wp-plugin' ),
             'manage_options',
@@ -29,12 +31,14 @@ class LightWork_Sandbox_Editor {
             plugins_url( 'assets/sandbox.js', dirname( __DIR__ ) . '/lightwork-wp-plugin.php' ),
             [ 'jquery', 'jquery-ui-draggable', 'jquery-ui-droppable' ],
             '0.3.8',
+
             true
         );
         wp_enqueue_style(
             'lw-sandbox',
             plugins_url( 'assets/sandbox.css', dirname( __DIR__ ) . '/lightwork-wp-plugin.php' ),
             [],
+
             '0.3.8'
         );
         $fields = [];
@@ -63,6 +67,7 @@ class LightWork_Sandbox_Editor {
         if ( ! current_user_can( 'manage_options' ) ) {
             return;
         }
+
         $html   = get_option( self::OPTION_NAME, '<p>Hello World</p>' );
         $fields = [];
         if ( isset( $_GET['slug'] ) ) {
@@ -75,6 +80,7 @@ class LightWork_Sandbox_Editor {
                 }
             }
         }
+
         ?>
         <div class="wrap">
             <h1><?php esc_html_e( 'Sandbox Editor', 'lightwork-wp-plugin' ); ?></h1>
@@ -92,6 +98,7 @@ class LightWork_Sandbox_Editor {
                         <button id="lw-run" class="button button-primary"><?php esc_html_e( 'Preview', 'lightwork-wp-plugin' ); ?></button>
                         <button id="lw-save" class="button"><?php esc_html_e( 'Save', 'lightwork-wp-plugin' ); ?></button>
                     </p>
+
                     <?php if ( $fields ) : ?>
                     <div id="lw-fields">
                         <h2><?php esc_html_e( 'ACF Fields', 'lightwork-wp-plugin' ); ?></h2>
@@ -100,6 +107,7 @@ class LightWork_Sandbox_Editor {
                         <?php endforeach; ?>
                     </div>
                     <?php endif; ?>
+
                 </div>
             </div>
         </div>
@@ -129,6 +137,7 @@ class LightWork_Sandbox_Editor {
         }
         update_option( self::OPTION_NAME, $final );
 
+
         $page_id = (int) get_option( self::PAGE_OPTION );
         $page_data = [
             'post_title'   => 'Sandbox Template',
@@ -144,6 +153,7 @@ class LightWork_Sandbox_Editor {
             $page_id = wp_insert_post( $page_data );
             update_option( self::PAGE_OPTION, $page_id );
         }
+
 
         wp_send_json_success();
     }
