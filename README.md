@@ -37,6 +37,7 @@ Il plugin è progettato per essere facilmente configurabile tramite un **wizard 
 - Dalla versione 0.3.5 il pannello di creazione adotta uno stile più moderno per una migliore usabilità.
 - Dalla versione 0.3.7 il **Sandbox Editor** salva il codice in una pagina "Sandbox Template" collegabile ai CPT.
 - Dalla versione 0.3.8 il Sandbox Editor permette di trascinare i campi ACF sull'anteprima assegnando l'ID corrispondente.
+- Dalla versione 0.3.9 l'Editor è integrato nell'editor di WordPress con funzioni di Undo/Redo e interfaccia modernizzata.
 
 ### 4. Rotte REST per il recupero dei dati
 
