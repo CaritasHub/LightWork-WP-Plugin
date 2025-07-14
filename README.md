@@ -40,6 +40,7 @@ Il plugin è progettato per essere facilmente configurabile tramite un **wizard 
 - Dalla versione 0.3.9 l'Editor è integrato nell'editor di WordPress con funzioni di Undo/Redo e interfaccia modernizzata.
 - Dalla versione 0.4.0 il vecchio Template Editor è stato rimosso e unificato con il Sandbox Editor.
 
+
 ### 4. Rotte REST per il recupero dei dati
 
 - Fornisce **rotte REST** per accedere ai CTP tramite API, con parametri di filtraggio avanzato.
