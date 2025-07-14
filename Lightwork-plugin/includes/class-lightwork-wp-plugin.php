@@ -14,6 +14,9 @@ class LightWork_WP_Plugin {
     /** @var LightWork_CPT_System */
     private $cpt_system;
 
+    /** @var LightWork_Sandbox_Editor */
+    private $sandbox_editor;
+
     public static function instance() {
         if ( null === self::$instance ) {
             self::$instance = new self();
@@ -23,11 +26,13 @@ class LightWork_WP_Plugin {
 
     private function __construct() {
         $this->template_editor = new LightWork_Template_Editor();
+        $this->sandbox_editor = new LightWork_Sandbox_Editor();
         $this->acf_system      = new LightWork_ACF_System();
         $this->cpt_system      = new LightWork_CPT_System( $this->acf_system, $this->template_editor );
 
         add_action( 'init', [ $this->cpt_system, 'register_saved_cpts' ] );
         add_action( 'admin_menu', [ $this->cpt_system, 'register_admin_menu' ] );
+        add_action( 'admin_menu', [ $this->sandbox_editor, 'register_page' ] );
         add_action( 'admin_enqueue_scripts', [ $this->cpt_system, 'enqueue_assets' ] );
         add_action( 'rest_api_init', [ $this, 'register_rest_routes' ] );
         add_action( self::CRON_HOOK, [ $this, 'batch_update' ] );
