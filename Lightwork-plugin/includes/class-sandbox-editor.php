@@ -5,10 +5,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 class LightWork_Sandbox_Editor {
     const OPTION_NAME = 'lw_sandbox_html';
+    const PAGE_OPTION = 'lw_sandbox_page_id';
 
     public function register_page() {
         add_submenu_page(
-            null,
+            'lightwork-wp-plugin',
             __( 'Sandbox Editor', 'lightwork-wp-plugin' ),
             __( 'Sandbox Editor', 'lightwork-wp-plugin' ),
             'manage_options',
@@ -27,14 +28,14 @@ class LightWork_Sandbox_Editor {
             'lw-sandbox',
             plugins_url( 'assets/sandbox.js', dirname( __DIR__ ) . '/lightwork-wp-plugin.php' ),
             [ 'jquery' ],
-            '0.3.6',
+            '0.3.7',
             true
         );
         wp_enqueue_style(
             'lw-sandbox',
             plugins_url( 'assets/sandbox.css', dirname( __DIR__ ) . '/lightwork-wp-plugin.php' ),
             [],
-            '0.3.6'
+            '0.3.7'
         );
         wp_localize_script( 'lw-sandbox', 'lwSandbox', [
             'ajaxurl' => admin_url( 'admin-ajax.php' ),
@@ -92,6 +93,23 @@ class LightWork_Sandbox_Editor {
             $final .= '<script>' . $js . '</script>';
         }
         update_option( self::OPTION_NAME, $final );
+
+        $page_id = (int) get_option( self::PAGE_OPTION );
+        $page_data = [
+            'post_title'   => 'Sandbox Template',
+            'post_status'  => 'draft',
+            'post_type'    => 'page',
+            'post_content' => $final,
+            'post_name'    => 'lw-sandbox-template',
+        ];
+        if ( $page_id && get_post( $page_id ) ) {
+            $page_data['ID'] = $page_id;
+            wp_update_post( $page_data );
+        } else {
+            $page_id = wp_insert_post( $page_data );
+            update_option( self::PAGE_OPTION, $page_id );
+        }
+
         wp_send_json_success();
     }
 }
