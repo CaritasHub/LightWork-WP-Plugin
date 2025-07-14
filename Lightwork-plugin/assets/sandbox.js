@@ -1,4 +1,27 @@
 jQuery(function($){
+
+    $('.lw-field').draggable({helper:'clone'});
+    function attachDroppable(){
+        var doc = $('#lw-preview iframe')[0].contentDocument;
+        $(doc).find('*').each(function(){
+            try{ $(this).droppable('destroy'); }catch(e){}
+            $(this).droppable({
+                hoverClass:'lw-highlight',
+                drop:function(e,ui){
+                    var field = $(ui.draggable).data('field');
+                    if(field){
+                        this.setAttribute('id', field);
+                        var clone = $(doc.body).clone();
+                        clone.find('style,script').remove();
+                        $('#lw-html').val(clone.html());
+                        updatePreview();
+                    }
+                }
+            });
+        });
+    }
+
+
     function updatePreview(){
         var html = $('#lw-html').val();
         var css = $('#lw-css').val();
@@ -7,6 +30,9 @@ jQuery(function($){
         doc.open();
         doc.write(html + '<style>'+css+'</style><script>'+js+'<\/script>');
         doc.close();
+
+        attachDroppable();
+
     }
     $('#lw-run').on('click', function(e){
         e.preventDefault();

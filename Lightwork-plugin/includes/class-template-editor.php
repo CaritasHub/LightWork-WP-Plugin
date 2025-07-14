@@ -22,103 +22,12 @@ class LightWork_Template_Editor {
             return;
         }
 
-        wp_enqueue_script( 'jquery-ui-draggable' );
-        wp_enqueue_script( 'jquery-ui-droppable' );
-
         $slug = isset( $_GET['slug'] ) ? sanitize_key( $_GET['slug'] ) : '';
-        $cpts = get_option( LightWork_WP_Plugin::OPTION_CPTS, [] );
-        $cpt  = null;
-        foreach ( $cpts as $item ) {
-            if ( $item['slug'] === $slug ) {
-                $cpt = $item;
-                break;
-            }
+        $url  = admin_url( 'admin.php?page=lightwork-sandbox-editor' );
+        if ( $slug ) {
+            $url = add_query_arg( 'slug', $slug, $url );
         }
-        if ( ! $cpt || empty( $cpt['template_page'] ) ) {
-            echo '<div class="wrap"><h1>' . esc_html__( 'No template configured.', 'lightwork-wp-plugin' ) . '</h1></div>';
-            return;
-        }
-
-        $page_id   = $cpt['template_page'];
-        $acf_fields = $cpt['acf_fields'] ?? [];
-        $option     = self::OPTION_PREFIX . $slug;
-        $mapping    = get_option( $option, [] );
-
-        if ( isset( $_POST['lw-save-template'] ) && check_admin_referer( 'lw_save_template_' . $slug ) ) {
-            $mapping = [];
-            foreach ( (array) ( $_POST['lw-mapping'] ?? [] ) as $key => $sel ) {
-                $mapping[ sanitize_key( $key ) ] = sanitize_text_field( $sel );
-            }
-            $missing = [];
-            foreach ( $acf_fields as $field ) {
-                if ( empty( $mapping[ $field['name'] ] ) ) {
-                    $missing[] = $field['name'];
-                }
-            }
-            if ( $missing ) {
-                add_settings_error( 'lightwork', 'missing', __( 'Map all fields before saving.', 'lightwork-wp-plugin' ) );
-            } else {
-                update_option( $option, $mapping );
-                add_settings_error( 'lightwork', 'saved', __( 'Template saved.', 'lightwork-wp-plugin' ), 'updated' );
-            }
-        }
-
-        ?>
-        <div class="wrap">
-            <h1><?php esc_html_e( 'Template Editor', 'lightwork-wp-plugin' ); ?></h1>
-            <?php settings_errors( 'lightwork' ); ?>
-            <div id="lw-template-editor" style="display:flex;gap:20px;">
-                <div id="lw-template-preview" style="flex:1;">
-                    <iframe src="<?php echo esc_url( get_permalink( $page_id ) ); ?>" style="width:100%;height:500px;border:1px solid #ccc;"></iframe>
-                </div>
-                <div id="lw-template-fields" style="width:250px;">
-                    <form method="post">
-                        <?php wp_nonce_field( 'lw_save_template_' . $slug ); ?>
-                        <?php foreach ( $acf_fields as $field ) :
-                            $name  = esc_attr( $field['name'] );
-                            $label = esc_html( $field['label'] );
-                            $sel   = esc_attr( $mapping[ $name ] ?? '' ); ?>
-                            <div class="lw-field" data-field="<?php echo $name; ?>">
-                                <?php echo $label; ?>
-                                <input type="hidden" name="lw-mapping[<?php echo $name; ?>]" value="<?php echo $sel; ?>" />
-                            </div>
-                        <?php endforeach; ?>
-                        <p><input type="submit" name="lw-save-template" class="button button-primary" value="<?php esc_attr_e( 'Save Template', 'lightwork-wp-plugin' ); ?>" /></p>
-                    </form>
-                </div>
-            </div>
-        </div>
-        <style>
-        #lw-template-editor .lw-field{border:1px solid #ccc;padding:5px;margin-bottom:5px;cursor:move;background:#fff;}
-        #lw-template-preview .lw-highlight{outline:2px dashed red;}
-        </style>
-        <script>
-        jQuery(function($){
-            $('.lw-field').draggable({helper:'clone'});
-            $('#lw-template-preview iframe').on('load', function(){
-                var doc = this.contentWindow.document;
-                $(doc).find('*').each(function(){
-                    $(this).droppable({
-                        hoverClass:'lw-highlight',
-                        drop:function(e,ui){
-                            var selector = lwGetSelector(this);
-                            ui.draggable.find('input').val(selector);
-                        }
-                    });
-                });
-            });
-            function lwGetSelector(el){
-                var sel='';
-                while(el && el.nodeType===1 && !el.id){
-                    var idx=$(el).index();
-                    sel=el.tagName.toLowerCase()+(idx?':eq('+idx+')':'')+(sel?'>'+sel:'');
-                    el=el.parentElement;
-                }
-                if(el && el.id){ sel='#'+el.id+(sel?'>'+sel:''); }
-                return sel;
-            }
-        });
-        </script>
-        <?php
+        wp_safe_redirect( $url );
+        exit;
     }
 }
