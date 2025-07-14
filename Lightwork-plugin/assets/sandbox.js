@@ -1,6 +1,18 @@
 jQuery(function($){
 
     $('.lw-field').draggable({helper:'clone'});
+
+    var history=[], redo=[];
+    function pushState(){
+        history.push({
+            html:$('#lw-html').val(),
+            css:$('#lw-css').val(),
+            js:$('#lw-js').val()
+        });
+        if(history.length>50){history.shift();}
+        redo=[];
+    }
+
     function attachDroppable(){
         var doc = $('#lw-preview iframe')[0].contentDocument;
         $(doc).find('*').each(function(){
@@ -10,10 +22,14 @@ jQuery(function($){
                 drop:function(e,ui){
                     var field = $(ui.draggable).data('field');
                     if(field){
-                        this.setAttribute('id', field);
+                        this.setAttribute('data-lw-field', field);
+                        if(!this.innerHTML.trim()){
+                            this.innerHTML='{{'+field+'}}';
+                        }
                         var clone = $(doc.body).clone();
                         clone.find('style,script').remove();
                         $('#lw-html').val(clone.html());
+                        pushState();
                         updatePreview();
                     }
                 }
@@ -50,6 +66,35 @@ jQuery(function($){
             alert('Saved');
         });
     });
+
+    $('#lw-html,#lw-css,#lw-js').on('input', function(){
+        pushState();
+    });
+
+    $('#lw-undo').on('click', function(e){
+        e.preventDefault();
+        if(history.length>1){
+            var current = history.pop();
+            redo.push(current);
+            var state = history[history.length-1];
+            $('#lw-html').val(state.html);
+            $('#lw-css').val(state.css);
+            $('#lw-js').val(state.js);
+            updatePreview();
+        }
+    });
+
+    $('#lw-redo').on('click', function(e){
+        e.preventDefault();
+        var state = redo.pop();
+        if(state){
+            history.push(state);
+            $('#lw-html').val(state.html);
+            $('#lw-css').val(state.css);
+            $('#lw-js').val(state.js);
+            updatePreview();
+        }
+    });
     $('#lw-preview iframe').on('load', function(){
         var doc = this.contentDocument;
         $(doc).on('click', '*', function(ev){
@@ -67,4 +112,5 @@ jQuery(function($){
         });
     });
     updatePreview();
+    pushState();
 });

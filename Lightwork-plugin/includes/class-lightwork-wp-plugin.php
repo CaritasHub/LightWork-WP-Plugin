@@ -5,8 +5,6 @@ class LightWork_WP_Plugin {
     const OPTION_CPTS = 'lightwork_cpts';
     const CRON_HOOK   = 'lightwork_batch_update';
 
-    /** @var LightWork_Template_Editor */
-    private $template_editor;
 
     /** @var LightWork_ACF_System */
     private $acf_system;
@@ -25,10 +23,9 @@ class LightWork_WP_Plugin {
     }
 
     private function __construct() {
-        $this->template_editor = new LightWork_Template_Editor();
         $this->sandbox_editor = new LightWork_Sandbox_Editor();
         $this->acf_system      = new LightWork_ACF_System();
-        $this->cpt_system      = new LightWork_CPT_System( $this->acf_system, $this->template_editor );
+        $this->cpt_system      = new LightWork_CPT_System( $this->acf_system );
 
         add_action( 'init', [ $this->cpt_system, 'register_saved_cpts' ] );
         add_action( 'admin_menu', [ $this->cpt_system, 'register_admin_menu' ] );

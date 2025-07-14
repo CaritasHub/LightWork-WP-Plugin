@@ -8,6 +8,39 @@ class LightWork_Sandbox_Editor {
 
     const PAGE_OPTION = 'lw_sandbox_page_id';
 
+    private function render_editor_markup( $html, array $fields ) {
+        ?>
+        <div id="lw-sandbox">
+            <div id="lw-preview">
+                <iframe></iframe>
+            </div>
+            <div id="lw-editors">
+                <textarea id="lw-html" placeholder="HTML"><?php echo esc_textarea( $html ); ?></textarea>
+                <div id="lw-sub">
+                    <textarea id="lw-css" placeholder="CSS"></textarea>
+                    <textarea id="lw-js" placeholder="JS"></textarea>
+                </div>
+                <p>
+                    <button id="lw-run" class="button button-primary"><?php esc_html_e( 'Preview', 'lightwork-wp-plugin' ); ?></button>
+                    <button id="lw-save" class="button"><?php esc_html_e( 'Save', 'lightwork-wp-plugin' ); ?></button>
+                    <button id="lw-undo" class="button">Undo</button>
+                    <button id="lw-redo" class="button">Redo</button>
+                </p>
+
+                <?php if ( $fields ) : ?>
+                <div id="lw-fields">
+                    <h2><?php esc_html_e( 'ACF Fields', 'lightwork-wp-plugin' ); ?></h2>
+                    <?php foreach ( $fields as $f ) : $name = esc_attr( $f['name'] ); ?>
+                        <div class="lw-field" data-field="<?php echo $name; ?>"><?php echo esc_html( $f['label'] ); ?></div>
+                    <?php endforeach; ?>
+                </div>
+                <?php endif; ?>
+
+            </div>
+        </div>
+        <?php
+    }
+
     public function register_page() {
         add_submenu_page(
             'lightwork-wp-plugin',
@@ -20,17 +53,20 @@ class LightWork_Sandbox_Editor {
         );
         add_action( 'admin_enqueue_scripts', [ $this, 'enqueue_assets' ] );
         add_action( 'wp_ajax_lw_save_sandbox', [ $this, 'ajax_save' ] );
+        add_action( 'add_meta_boxes_page', [ $this, 'add_meta_box' ] );
     }
 
     public function enqueue_assets( $hook ) {
-        if ( strpos( $hook, 'lightwork-sandbox-editor' ) === false ) {
+        $screen = get_current_screen();
+        $page_id = (int) get_option( self::PAGE_OPTION );
+        if ( strpos( $hook, 'lightwork-sandbox-editor' ) === false && ! ( $screen && $screen->id === 'page' && isset( $_GET['post'] ) && (int) $_GET['post'] === $page_id ) ) {
             return;
         }
         wp_enqueue_script(
             'lw-sandbox',
             plugins_url( 'assets/sandbox.js', dirname( __DIR__ ) . '/lightwork-wp-plugin.php' ),
             [ 'jquery', 'jquery-ui-draggable', 'jquery-ui-droppable' ],
-            '0.3.8',
+            '0.4.0',
 
             true
         );
@@ -39,7 +75,7 @@ class LightWork_Sandbox_Editor {
             plugins_url( 'assets/sandbox.css', dirname( __DIR__ ) . '/lightwork-wp-plugin.php' ),
             [],
 
-            '0.3.8'
+            '0.4.0'
         );
         $fields = [];
         if ( isset( $_GET['slug'] ) ) {
@@ -84,32 +120,7 @@ class LightWork_Sandbox_Editor {
         ?>
         <div class="wrap">
             <h1><?php esc_html_e( 'Sandbox Editor', 'lightwork-wp-plugin' ); ?></h1>
-            <div id="lw-sandbox">
-                <div id="lw-preview">
-                    <iframe></iframe>
-                </div>
-                <div id="lw-editors">
-                    <textarea id="lw-html" placeholder="HTML"><?php echo esc_textarea( $html ); ?></textarea>
-                    <div id="lw-sub">
-                        <textarea id="lw-css" placeholder="CSS"></textarea>
-                        <textarea id="lw-js" placeholder="JS"></textarea>
-                    </div>
-                    <p>
-                        <button id="lw-run" class="button button-primary"><?php esc_html_e( 'Preview', 'lightwork-wp-plugin' ); ?></button>
-                        <button id="lw-save" class="button"><?php esc_html_e( 'Save', 'lightwork-wp-plugin' ); ?></button>
-                    </p>
-
-                    <?php if ( $fields ) : ?>
-                    <div id="lw-fields">
-                        <h2><?php esc_html_e( 'ACF Fields', 'lightwork-wp-plugin' ); ?></h2>
-                        <?php foreach ( $fields as $f ) : $name = esc_attr( $f['name'] ); ?>
-                            <div class="lw-field" data-field="<?php echo $name; ?>"><?php echo esc_html( $f['label'] ); ?></div>
-                        <?php endforeach; ?>
-                    </div>
-                    <?php endif; ?>
-
-                </div>
-            </div>
+            <?php $this->render_editor_markup( $html, $fields ); ?>
         </div>
         <?php
     }
@@ -156,5 +167,27 @@ class LightWork_Sandbox_Editor {
 
 
         wp_send_json_success();
+    }
+
+    public function add_meta_box( $post ) {
+        $page_id = (int) get_option( self::PAGE_OPTION );
+        if ( $post->ID !== $page_id ) {
+            return;
+        }
+        add_meta_box(
+            'lw-sandbox-editor',
+            __( 'Sandbox Editor', 'lightwork-wp-plugin' ),
+            [ $this, 'render_meta_box' ],
+            'page',
+            'normal',
+            'high'
+        );
+        remove_post_type_support( 'page', 'editor' );
+    }
+
+    public function render_meta_box( $post ) {
+        $html   = get_option( self::OPTION_NAME, '<p>Hello World</p>' );
+        $fields = [];
+        $this->render_editor_markup( $html, $fields );
     }
 }

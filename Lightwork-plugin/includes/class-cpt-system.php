@@ -7,12 +7,8 @@ class LightWork_CPT_System {
     /** @var LightWork_ACF_System */
     private $acf;
 
-    /** @var LightWork_Template_Editor */
-    private $editor;
-
-    public function __construct( LightWork_ACF_System $acf, LightWork_Template_Editor $editor ) {
-        $this->acf    = $acf;
-        $this->editor = $editor;
+    public function __construct( LightWork_ACF_System $acf ) {
+        $this->acf = $acf;
     }
 
     /**
@@ -107,7 +103,6 @@ class LightWork_CPT_System {
             'dashicons-admin-generic'
         );
 
-        $this->editor->register_page();
     }
 
     /**
