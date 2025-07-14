@@ -3,7 +3,7 @@
  * Plugin Name: LightWork WP Plugin
  * Description: Gestione dei Custom Post Types integrata con ACF e REST API.
 
- * Version: 0.3.8
+ * Version: 0.3.9
 
  * Author: LightWork
  * License: GPLv2 or later
